@@ -10,6 +10,10 @@ import (
 func main() {
 	println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
+
+	//tokenChannel := make(chan string)
+	//auth.TwitchAuth(tokenChannel)
+	//token <- tokenChannel
+	go overlay.WebOverlay()
 	auth.TwitchAuth()
-	overlay.WebOverlay()
 }

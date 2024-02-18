@@ -211,10 +211,10 @@ func TwitchAuth() {
 		http.Handle(path, errorHandling(middleware(handler)))
 	}
 
-	handleFunc("/", HandleRoot)
+	handleFunc("/auth", HandleRoot)
 	handleFunc("/login", HandleLogin)
 	handleFunc("/redirect", HandleOAuth2Callback)
 
-	fmt.Println("Started running auth on http://localhost:8080")
-	fmt.Println(http.ListenAndServe(":8080", nil))
+	fmt.Println("Started running auth on http://localhost:28080/auth")
+	fmt.Println(http.ListenAndServe(":28080", nil))
 }
