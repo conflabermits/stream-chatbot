@@ -14,6 +14,6 @@ func main() {
 	//tokenChannel := make(chan string)
 	//auth.TwitchAuth(tokenChannel)
 	//token <- tokenChannel
-	go overlay.WebOverlay()
-	auth.TwitchAuth()
+	go auth.TwitchAuth()
+	overlay.WebOverlay()
 }
