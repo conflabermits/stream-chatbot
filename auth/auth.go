@@ -34,8 +34,9 @@ var (
 	scopes       = []string{"chat:read", "chat:edit"}
 	redirectURL  = "http://localhost:8080/redirect"
 	oauth2Config *oauth2.Config
-	cookieSecret = []byte("I don't think this is a good secret either")
+	cookieSecret = []byte("A new secret")
 	cookieStore  = sessions.NewCookieStore(cookieSecret)
+	TokenChan    chan string
 )
 
 func getEnvVar(key string) string {
@@ -124,7 +125,9 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 	session.Values[oauthTokenKey] = token
 
 	fmt.Printf("Access token: %s\n", token.AccessToken)
-	//fmt.Printf("Access token got\n")
+	fmt.Printf("Full token value: %v\n", token)
+
+	TokenChan <- token.AccessToken
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 

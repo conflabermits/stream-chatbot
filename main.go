@@ -11,9 +11,8 @@ func main() {
 	println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
 
-	//tokenChannel := make(chan string)
-	//auth.TwitchAuth(tokenChannel)
-	//token <- tokenChannel
 	go auth.TwitchAuth()
-	overlay.WebOverlay()
+	go overlay.WebOverlay()
+	token := <-auth.TokenChan
+	fmt.Printf("Received token from auth module: %s\n", token)
 }
