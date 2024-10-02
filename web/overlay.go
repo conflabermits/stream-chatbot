@@ -28,14 +28,14 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func WebOverlay() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/overlay", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, web!")
 	})
 
 	http.HandleFunc("/index", handleIndex)
 
-	fmt.Printf("Starting overlay server on port 8080\n")
-	err := http.ListenAndServe(":8080", nil)
+	fmt.Printf("Starting /overlay on port 28080\n")
+	err := http.ListenAndServe(":28080", nil)
 	if err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}

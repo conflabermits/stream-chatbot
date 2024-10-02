@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"stream-chatbot/auth"
 	"stream-chatbot/common"
 	overlay "stream-chatbot/web"
@@ -18,11 +19,17 @@ import (
 */
 
 func main() {
-	println("Started program!")
+	log.Println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
 
-	go auth.TwitchAuth()
-	go overlay.WebOverlay()
-	token := <-auth.TokenChan
+	tokenChan := make(chan string)
+	log.Println("Created token channel in main")
+	go auth.TwitchAuth(tokenChan)
+	log.Println("Kicked off TwitchAuth goroutine")
+	token := <-tokenChan
+	log.Println("Passed token from tokenChan to var")
+	//<-tokenChan
+	//log.Println("Closed tokenChan")
 	fmt.Printf("Received token from auth module: %s\n", token)
+	overlay.WebOverlay()
 }

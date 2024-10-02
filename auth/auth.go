@@ -31,12 +31,12 @@ var (
 	// Consider storing the secret in an environment variable or a dedicated storage system.
 	clientID     = getEnvVar("clientId")
 	clientSecret = getEnvVar("clientSecret")
-	scopes       = []string{"chat:read", "chat:edit"}
+	scopes       = []string{"chat:read", "chat:edit", "channel:manage:polls"}
 	redirectURL  = "http://localhost:8080/redirect"
 	oauth2Config *oauth2.Config
-	cookieSecret = []byte("A new secret")
+	cookieSecret = []byte("A new secret8")
 	cookieStore  = sessions.NewCookieStore(cookieSecret)
-	TokenChan    chan string
+	tokenChan    chan string
 )
 
 func getEnvVar(key string) string {
@@ -127,9 +127,13 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 	fmt.Printf("Access token: %s\n", token.AccessToken)
 	fmt.Printf("Full token value: %v\n", token)
 
-	TokenChan <- token.AccessToken
+	go func() {
+		tokenChan <- token.AccessToken
+	}()
+	fmt.Println("Sent token to channel")
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	fmt.Println("Redirected to /")
 
 	return
 }
@@ -165,7 +169,7 @@ func AnnotateError(err error, annotation string, code int) error {
 
 type Handler func(http.ResponseWriter, *http.Request) error
 
-func TwitchAuth() {
+func TwitchAuth(TokenChan chan string) {
 	// Gob encoding for gorilla/sessions
 	gob.Register(&oauth2.Token{})
 
@@ -214,10 +218,11 @@ func TwitchAuth() {
 		http.Handle(path, errorHandling(middleware(handler)))
 	}
 
-	handleFunc("/auth", HandleRoot)
+	tokenChan = TokenChan
+	handleFunc("/", HandleRoot)
 	handleFunc("/login", HandleLogin)
 	handleFunc("/redirect", HandleOAuth2Callback)
 
-	fmt.Println("Started running auth on http://localhost:28080/auth")
-	fmt.Println(http.ListenAndServe(":28080", nil))
+	fmt.Println("Started running auth on http://localhost:8080/")
+	fmt.Println(http.ListenAndServe(":8080", nil))
 }
