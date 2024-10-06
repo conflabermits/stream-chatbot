@@ -3,6 +3,7 @@ module stream-chatbot
 go 1.20
 
 require (
+	github.com/gempir/go-twitch-irc/v4 v4.2.0
 	github.com/gorilla/sessions v1.2.2
 	golang.org/x/oauth2 v0.16.0
 )

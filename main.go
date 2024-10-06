@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"stream-chatbot/auth"
+	"stream-chatbot/chatbot"
 	"stream-chatbot/common"
 	overlay "stream-chatbot/web"
 )
@@ -26,10 +27,12 @@ func main() {
 	log.Println("Created token channel in main")
 	go auth.TwitchAuth(tokenChan)
 	log.Println("Kicked off TwitchAuth goroutine")
-	token := <-tokenChan
+	twitchToken := <-tokenChan
 	log.Println("Passed token from tokenChan to var")
 	//<-tokenChan
 	//log.Println("Closed tokenChan")
-	fmt.Printf("Received token from auth module: %s\n", token[len(token)-5:])
-	overlay.WebOverlay()
+	fmt.Printf("Received token from auth module: %s\n", twitchToken[len(twitchToken)-5:])
+	go overlay.WebOverlay()
+	log.Println("Kicked off WebOverlay goroutine")
+	chatbot.Chatbot(twitchToken)
 }
