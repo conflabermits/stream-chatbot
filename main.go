@@ -30,6 +30,6 @@ func main() {
 	log.Println("Passed token from tokenChan to var")
 	//<-tokenChan
 	//log.Println("Closed tokenChan")
-	fmt.Printf("Received token from auth module: %s\n", token)
+	fmt.Printf("Received token from auth module: %s\n", token[len(token)-5:])
 	overlay.WebOverlay()
 }

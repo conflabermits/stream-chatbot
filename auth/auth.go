@@ -1,11 +1,22 @@
-// Borrowed heavily from Twitch's authentication-go-sample code:
 // https://github.com/twitchdev/authentication-go-sample/blob/main/oauth-authorization-code/main.go
+
+/*
+Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
+
+	http://aws.amazon.com/apache2.0/
+
+	or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+
+*/
 
 package auth
 
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/gob"
 	"encoding/hex"
 	"errors"
@@ -34,7 +45,8 @@ var (
 	scopes       = []string{"chat:read", "chat:edit", "channel:manage:polls"}
 	redirectURL  = "http://localhost:8080/redirect"
 	oauth2Config *oauth2.Config
-	cookieSecret = []byte("A new secret8")
+	// Generate a random cookieSecret on each run
+	cookieSecret = []byte(generateRandomString(27))
 	cookieStore  = sessions.NewCookieStore(cookieSecret)
 	tokenChan    chan string
 )
@@ -46,6 +58,22 @@ func getEnvVar(key string) string {
 		os.Exit(1)
 	}
 	return value
+}
+
+func generateRandomString(length int) string {
+	// Calculate the number of bytes needed for the desired string length
+	bytes := make([]byte, (length + 1)) // +1 to handle odd lengths
+
+	// Read random bytes from the crypto/rand source
+	if _, err := rand.Read(bytes); err != nil {
+		log.Println("Error generating the random string")
+		return "ThisIsNotAGoodCookieSecret"
+	}
+
+	// Encode the bytes to a base64 string
+	encoded := base64.StdEncoding.EncodeToString(bytes)
+
+	return encoded[:length]
 }
 
 // HandleRoot is a Handler that shows a login button. In production, if the frontend is served / generated
@@ -98,6 +126,8 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 	defer func() {
 		if err := session.Save(r, w); err != nil {
 			log.Printf("error saving session: %s", err)
+		} else {
+			log.Println("session saved via defer func")
 		}
 	}()
 
@@ -106,6 +136,13 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 		err = errors.New("missing state challenge")
 	case state != stateChallenge[0]:
 		err = fmt.Errorf("invalid oauth state, expected '%s', got '%s'\n", state, stateChallenge[0])
+		if len(stateChallenge) > 1 {
+			log.Printf("multiple state challenges present: %v total\n", len(stateChallenge))
+			/* for i, v := range stateChallenge {
+				log.Printf("state challenge %d: %s\n", i, v)
+			}
+			log.Printf("state from request: %s\n", state) */
+		}
 	}
 
 	if err != nil {
@@ -124,8 +161,10 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 	// add the oauth token to session
 	session.Values[oauthTokenKey] = token
 
-	fmt.Printf("Access token: %s\n", token.AccessToken)
-	fmt.Printf("Full token value: %v\n", token)
+	// Print the last 5 characters of the access token for debugging
+	fmt.Printf("Access token from auth.go: %s\n", token.AccessToken[len(token.AccessToken)-5:])
+	//fmt.Printf("Access token: %s\n", token.AccessToken)
+	//fmt.Printf("Full token value: %v\n", token)
 
 	go func() {
 		tokenChan <- token.AccessToken
