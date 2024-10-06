@@ -14,5 +14,5 @@ func main() {
 	go auth.TwitchAuth()
 	go overlay.WebOverlay()
 	token := <-auth.TokenChan
-	fmt.Printf("Received token from auth module: %s\n", token)
+	fmt.Printf("Received token from auth module: %s\n", token[len(token)-5:])
 }
