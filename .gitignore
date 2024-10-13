@@ -21,4 +21,5 @@
 go.work
 
 # Private credentials files (if any)
-.creds
+.creds*
+.token*
