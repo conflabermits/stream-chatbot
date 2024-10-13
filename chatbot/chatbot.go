@@ -372,7 +372,7 @@ func Chatbot(TwitchToken string) {
 	//channel := "channel_to_join"
 	username := getEnvVar("twitchUsername") //e.g., "conflabermits"
 	//token := getEnvVar("twitchToken")       //e.g., "oauth:<token>"
-	twitchToken := TwitchToken
+	twitchToken := "oauth:" + TwitchToken
 	channel := getEnvVar("twitchChannel") //e.g., "conflabermits"
 	fmt.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
 	fmt.Printf("username: %s\n", username)
