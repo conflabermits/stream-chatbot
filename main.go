@@ -23,15 +23,25 @@ func main() {
 	log.Println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
 
-	tokenChan := make(chan string)
-	log.Println("Created token channel in main")
-	go auth.TwitchAuth(tokenChan)
-	log.Println("Kicked off TwitchAuth goroutine")
-	twitchToken := <-tokenChan
-	log.Println("Passed token from tokenChan to var")
-	//<-tokenChan
-	//log.Println("Closed tokenChan")
-	fmt.Printf("Received token from auth module: %s\n", twitchToken[len(twitchToken)-5:])
+	// Check token validity
+	var twitchToken string
+	if common.CheckTwitchToken(common.GetEnvVar("twitchToken")) {
+		log.Println("Stored twitchToken is valid")
+		twitchToken = common.GetEnvVar("twitchToken")
+		log.Printf("Received token from file: %s\n", twitchToken[len(twitchToken)-5:])
+	} else {
+		log.Println("Stored twitchToken is invalid")
+		tokenChan := make(chan string)
+		log.Println("Created token channel in main")
+		go auth.TwitchAuth(tokenChan)
+		log.Println("Kicked off TwitchAuth goroutine")
+		twitchToken = <-tokenChan
+		log.Println("Passed token from tokenChan to var")
+		//<-tokenChan
+		//log.Println("Closed tokenChan")
+		log.Printf("Received token from auth module: %s\n", twitchToken[len(twitchToken)-5:])
+	}
+
 	go overlay.WebOverlay()
 	log.Println("Kicked off WebOverlay goroutine")
 	chatbot.Chatbot(twitchToken)
