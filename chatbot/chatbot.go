@@ -84,7 +84,8 @@ func getPoll() (PollGetResponse, error) {
 	}
 
 	// Set the headers
-	bearerToken := strings.Split((twitchToken), ":")[1]
+	fmt.Printf("Length of 'twitchToken': %v\n", len(twitchToken))
+	bearerToken := twitchToken
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	req.Header.Set("Client-Id", getEnvVar("clientId"))
 
@@ -189,15 +190,27 @@ func sendPoll(pollText string) string {
 	}
 
 	var question string
+	var choice string
 	choices := []PollPostChoice{}
 
 	for index, phrase := range strings.Split(pollText, "//") {
 		if index == 0 {
-			question = strings.TrimSpace(phrase)
+			// Needs to be 60 chars or less
+			if len(strings.TrimSpace(phrase)) > 60 {
+				question = strings.TrimSpace(phrase)[0:60]
+			} else {
+				question = strings.TrimSpace(phrase)
+			}
 			fmt.Println("Identified question as:", question)
 		} else {
-			fmt.Printf("Identified choice %s as: %s\n", fmt.Sprint(index), strings.TrimSpace(phrase))
-			choices = append(choices, PollPostChoice{Title: strings.TrimSpace(phrase)})
+			// Needs to be 25 chars or less
+			if len(strings.TrimSpace(phrase)) > 25 {
+				choice = strings.TrimSpace(phrase)[0:25]
+			} else {
+				choice = strings.TrimSpace(phrase)
+			}
+			fmt.Printf("Identified choice %s as: %s\n", fmt.Sprint(index), choice)
+			choices = append(choices, PollPostChoice{Title: choice})
 		}
 	}
 
@@ -229,7 +242,7 @@ func sendPoll(pollText string) string {
 	}
 
 	// Set the headers
-	bearerToken := strings.Split((twitchToken), ":")[1]
+	bearerToken := twitchToken
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	req.Header.Set("Client-Id", getEnvVar("clientId"))
@@ -372,14 +385,14 @@ func Chatbot(TwitchToken string) {
 	//channel := "channel_to_join"
 	username := getEnvVar("twitchUsername") //e.g., "conflabermits"
 	//token := getEnvVar("twitchToken")       //e.g., "oauth:<token>"
-	twitchToken := "oauth:" + TwitchToken
+	twitchToken = TwitchToken
 	channel := getEnvVar("twitchChannel") //e.g., "conflabermits"
 	fmt.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
 	fmt.Printf("username: %s\n", username)
 	fmt.Printf("channel: %s\n", channel)
 
 	// Create a new Twitch client
-	client := twitch.NewClient(username, twitchToken)
+	client := twitch.NewClient(username, "oauth:"+twitchToken)
 
 	// Register a callback for when the bot receives a message
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
