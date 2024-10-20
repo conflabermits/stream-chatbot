@@ -1,17 +1,24 @@
 package common
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 )
 
+func CheckErr(err error, from string) {
+	if err != nil {
+		log.Printf("Error: %v\n", err)
+		log.Printf("Error from: %s\n", from)
+		panic(err)
+	}
+}
+
 func GetEnvVar(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
-		fmt.Printf("Error: Environment variable %s does not exist or is not set\n", key)
-		os.Exit(1)
+		log.Printf("Error: Environment variable %s does not exist or is not set\n", key)
+		panic("Environment variable not set")
 	}
 	return value
 }
@@ -23,18 +30,12 @@ func CheckTwitchToken(token string) bool {
 
 	url := "https://id.twitch.tv/oauth2/validate"
 	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		log.Printf("Error creating request: %v\n", err)
-		return false
-	}
+	CheckErr(err, "CheckTwitchToken - Error creating request")
 
 	req.Header.Set("Authorization", "OAuth "+token)
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error sending request: %v\n", err)
-		return false
-	}
+	CheckErr(err, "CheckTwitchToken - Error sending request")
 	defer resp.Body.Close()
 
 	switch resp.StatusCode {
@@ -52,31 +53,20 @@ func CheckTwitchToken(token string) bool {
 
 /* func WriteToFile(filename string, data string) {
 	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("Error opening file: %v\n", err)
-		os.Exit(1)
-	}
+	CheckErr(err, "WriteToFile - Error opening file")
 	defer file.Close()
 
-	if _, err := file.WriteString(data); err != nil {
-		fmt.Printf("Error writing to file: %v\n", err)
-		os.Exit(1)
-	}
+	_, err = file.WriteString("data")
+	CheckErr(err, "WriteToFile - Error writing to file")
 }
 
 func ReadFromFile(filename string) string {
 	file, err := os.Open(filename)
-	if err != nil {
-		fmt.Printf("Error opening file: %v\n", err)
-		os.Exit(1)
-	}
+	CheckErr(err, "ReadFromFile - Error opening file")
 	defer file.Close()
 
 	data := make([]byte, 1024)
 	count, err := file.Read(data)
-	if err != nil {
-		fmt.Printf("Error reading from file: %v\n", err)
-		os.Exit(1)
-	}
+	CheckErr(err, "ReadFromFile - Error reading from file")
 	return string(data[:count])
 } */
