@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"stream-chatbot/auth"
 	"stream-chatbot/chatbot"
 	"stream-chatbot/common"
 	overlay "stream-chatbot/web"
+	"strings"
 )
 
 /*
@@ -19,6 +22,15 @@ import (
 3. Start chatbot
 4. Start web overlay
 */
+
+var ChatbotVars = []string{
+	"ClientID",
+	"ClientSecret",
+	"TwitchUsername",
+	"TwitchChannel",
+	"BroadcasterID",
+	"TwitchToken",
+}
 
 type ChatbotCreds struct {
 	ClientID       string
@@ -52,6 +64,70 @@ func parseArgs() (*Options, error) {
 	return options, nil
 }
 
+func assignVar(line string, creds *ChatbotCreds) {
+	keyval := strings.Split(line, "=")
+	key := strings.TrimSpace(keyval[0])
+	value := strings.TrimSpace(keyval[1])
+	for _, varname := range ChatbotVars {
+		if key == varname {
+			switch key {
+			case "ClientID":
+				creds.ClientID = value
+			case "ClientSecret":
+				creds.ClientSecret = value
+			case "TwitchUsername":
+				creds.TwitchUsername = value
+			case "TwitchChannel":
+				creds.TwitchChannel = value
+			case "BroadcasterID":
+				creds.BroadcasterID = value
+			case "TwitchToken":
+				creds.TwitchToken = value
+			}
+		}
+	}
+
+}
+
+func getChatbotCredsFromFile(filename string) (*ChatbotCreds, error) {
+	creds := &ChatbotCreds{}
+	file, err := os.Open(filename)
+	common.CheckErr(err, "getChatbotCredsFromFile - Error opening file")
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		assignVar(line, creds)
+	}
+	return creds, nil
+}
+
+func getChatbotCredsFromEnv() (*ChatbotCreds, error) {
+	creds := &ChatbotCreds{}
+	for _, key := range ChatbotVars {
+		value, exists := os.LookupEnv(key)
+		if !exists {
+			return nil, fmt.Errorf("Environment variable %s does not exist or is not set", key)
+		}
+		switch key {
+		case "clientId":
+			creds.ClientID = value
+		case "clientSecret":
+			creds.ClientSecret = value
+		case "twitchUsername":
+			creds.TwitchUsername = value
+		case "twitchChannel":
+			creds.TwitchChannel = value
+		case "broadcaster_id":
+			creds.BroadcasterID = value
+		case "twitchToken":
+			creds.TwitchToken = value
+		}
+	}
+	return creds, nil
+}
+
 func main() {
 	log.Println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
@@ -60,7 +136,7 @@ func main() {
 	common.CheckErr(err, "parseArgs")
 	if options.CredsFile != "" {
 		log.Printf("Using credentials file: %s\n", options.CredsFile)
-		//Get credentials from file
+		getChatbotCredsFromFile(options.CredsFile)
 	}
 	if options.CredsEnv {
 		log.Println("Using environment variables for credentials")
