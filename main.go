@@ -111,17 +111,17 @@ func getChatbotCredsFromEnv() (*ChatbotCreds, error) {
 			return nil, fmt.Errorf("Environment variable %s does not exist or is not set", key)
 		}
 		switch key {
-		case "clientId":
+		case "ClientID":
 			creds.ClientID = value
-		case "clientSecret":
+		case "ClientSecret":
 			creds.ClientSecret = value
-		case "twitchUsername":
+		case "TwitchUsername":
 			creds.TwitchUsername = value
-		case "twitchChannel":
+		case "TwitchChannel":
 			creds.TwitchChannel = value
-		case "broadcaster_id":
+		case "BroadcasterID":
 			creds.BroadcasterID = value
-		case "twitchToken":
+		case "TwitchToken":
 			creds.TwitchToken = value
 		}
 	}
