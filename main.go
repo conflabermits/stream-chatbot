@@ -89,7 +89,7 @@ func assignVar(line string, creds *ChatbotCreds) {
 
 }
 
-func getChatbotCredsFromFile(filename string) (*ChatbotCreds, error) {
+func getChatbotCredsFromFile(filename string) {
 	creds := &ChatbotCreds{}
 	file, err := os.Open(filename)
 	common.CheckErr(err, "getChatbotCredsFromFile - Error opening file")
@@ -100,16 +100,12 @@ func getChatbotCredsFromFile(filename string) (*ChatbotCreds, error) {
 		line := scanner.Text()
 		assignVar(line, creds)
 	}
-	return creds, nil
 }
 
-func getChatbotCredsFromEnv() (*ChatbotCreds, error) {
+func getChatbotCredsFromEnv() {
 	creds := &ChatbotCreds{}
 	for _, key := range ChatbotVars {
-		value, exists := os.LookupEnv(key)
-		if !exists {
-			return nil, fmt.Errorf("Environment variable %s does not exist or is not set", key)
-		}
+		value := common.GetEnvVar(key)
 		switch key {
 		case "ClientID":
 			creds.ClientID = value
@@ -125,7 +121,6 @@ func getChatbotCredsFromEnv() (*ChatbotCreds, error) {
 			creds.TwitchToken = value
 		}
 	}
-	return creds, nil
 }
 
 func main() {
@@ -140,7 +135,7 @@ func main() {
 	}
 	if options.CredsEnv {
 		log.Println("Using environment variables for credentials")
-		//Get credentials from environment variables
+		getChatbotCredsFromEnv()
 	}
 	if options.CredsOverride != "" {
 		log.Printf("Overriding credentials with provided values\n")
