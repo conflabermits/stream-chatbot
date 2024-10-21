@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -18,7 +19,7 @@ func GetEnvVar(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
 		log.Printf("Error: Environment variable %s does not exist or is not set\n", key)
-		panic("Environment variable not set")
+		panic(fmt.Sprintf("Environment variable not set: %s\n", key))
 	}
 	return value
 }
