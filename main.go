@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+
 	"stream-chatbot/auth"
 	"stream-chatbot/chatbot"
 	"stream-chatbot/common"
@@ -32,14 +33,34 @@ var ChatbotVars = []string{
 	"TwitchToken",
 }
 
-type ChatbotCreds struct {
+/* type ChatbotCreds struct {
 	ClientID       string
 	ClientSecret   string
 	TwitchUsername string
 	TwitchChannel  string
 	BroadcasterID  string
 	TwitchToken    string
-}
+} */
+
+/* var ChatbotCreds map[string]string = map[string]string{
+	"ClientID":       "",
+	"ClientSecret":   "",
+	"TwitchUsername": "",
+	"TwitchChannel":  "",
+	"BroadcasterID":  "",
+	"TwitchToken":    "",
+} */
+//var ChatbotCreds = common.ChatbotCreds
+
+/* ChatbotCreds{
+	ClientID:       "",
+	ClientSecret:   "",
+	TwitchUsername: "",
+	TwitchChannel:  "",
+	BroadcasterID:  "",
+	TwitchToken:    "",
+} */
+//var ChatbotCreds = &ChatbotCreds{}
 
 type Options struct {
 	CredsFile     string
@@ -50,7 +71,7 @@ type Options struct {
 func parseArgs() (*Options, error) {
 	options := &Options{}
 
-	flag.StringVar(&options.CredsFile, "credsFile", "", "Credentials File")
+	flag.StringVar(&options.CredsFile, "credsFile", ".creds", "Credentials File")
 	flag.BoolVar(&options.CredsEnv, "credsEnv", false, "Use environment variables for credentials")
 	flag.StringVar(&options.CredsOverride, "credsOverride", "", "Override specific credentials with provided comma-separated key-value pairs")
 	flag.Usage = func() {
@@ -64,7 +85,8 @@ func parseArgs() (*Options, error) {
 	return options, nil
 }
 
-func assignVar(line string, creds *ChatbotCreds) {
+// func assignVar(line string, creds *ChatbotCreds) {
+func assignVar(line string) {
 	keyval := strings.Split(line, "=")
 	key := strings.TrimSpace(keyval[0])
 	value := strings.TrimSpace(keyval[1])
@@ -72,17 +94,17 @@ func assignVar(line string, creds *ChatbotCreds) {
 		if key == varname {
 			switch key {
 			case "ClientID":
-				creds.ClientID = value
+				common.ChatbotCreds["ClientID"] = value
 			case "ClientSecret":
-				creds.ClientSecret = value
+				common.ChatbotCreds["ClientSecret"] = value
 			case "TwitchUsername":
-				creds.TwitchUsername = value
+				common.ChatbotCreds["TwitchUsername"] = value
 			case "TwitchChannel":
-				creds.TwitchChannel = value
+				common.ChatbotCreds["TwitchChannel"] = value
 			case "BroadcasterID":
-				creds.BroadcasterID = value
+				common.ChatbotCreds["BroadcasterID"] = value
 			case "TwitchToken":
-				creds.TwitchToken = value
+				common.ChatbotCreds["TwitchToken"] = value
 			}
 		}
 	}
@@ -90,7 +112,7 @@ func assignVar(line string, creds *ChatbotCreds) {
 }
 
 func getChatbotCredsFromFile(filename string) {
-	creds := &ChatbotCreds{}
+	//creds := &ChatbotCreds{}
 	file, err := os.Open(filename)
 	common.CheckErr(err, "getChatbotCredsFromFile - Error opening file")
 	defer file.Close()
@@ -98,27 +120,27 @@ func getChatbotCredsFromFile(filename string) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		assignVar(line, creds)
+		assignVar(line)
 	}
 }
 
 func getChatbotCredsFromEnv() {
-	creds := &ChatbotCreds{}
+	//creds := &ChatbotCreds{}
 	for _, key := range ChatbotVars {
 		value := common.GetEnvVar(key)
 		switch key {
 		case "ClientID":
-			creds.ClientID = value
+			common.ChatbotCreds["ClientID"] = value
 		case "ClientSecret":
-			creds.ClientSecret = value
+			common.ChatbotCreds["ClientSecret"] = value
 		case "TwitchUsername":
-			creds.TwitchUsername = value
+			common.ChatbotCreds["TwitchUsername"] = value
 		case "TwitchChannel":
-			creds.TwitchChannel = value
+			common.ChatbotCreds["TwitchChannel"] = value
 		case "BroadcasterID":
-			creds.BroadcasterID = value
+			common.ChatbotCreds["BroadcasterID"] = value
 		case "TwitchToken":
-			creds.TwitchToken = value
+			common.ChatbotCreds["TwitchToken"] = value
 		}
 	}
 }
@@ -129,6 +151,12 @@ func main() {
 
 	options, err := parseArgs()
 	common.CheckErr(err, "parseArgs")
+
+	/* for _, key := range ChatbotVars {
+		log.Printf("Creating empty key in ChatbotCreds: %s\n", key)
+		ChatbotCreds[key] = ""
+	} */
+
 	if options.CredsFile != "" {
 		log.Printf("Using credentials file: %s\n", options.CredsFile)
 		getChatbotCredsFromFile(options.CredsFile)
@@ -142,12 +170,16 @@ func main() {
 		//For each comma-separated key-value pair, override the value of the key with the provided value
 	}
 
+	twitchToken := common.ChatbotCreds["TwitchToken"]
+	if len(twitchToken) > 5 {
+		log.Printf("Starting with token: %s\n", twitchToken[len(twitchToken)-5:])
+	} else {
+		log.Println("Starting without token")
+	}
+
 	// Check token validity
-	var twitchToken string
-	if common.CheckTwitchToken(common.GetEnvVar("twitchToken")) {
+	if common.CheckTwitchToken(twitchToken) && len(twitchToken) > 5 {
 		log.Println("Stored twitchToken is valid")
-		twitchToken = common.GetEnvVar("twitchToken")
-		log.Printf("Received token from file: %s\n", twitchToken[len(twitchToken)-5:])
 	} else {
 		log.Println("Stored twitchToken is invalid")
 		tokenChan := make(chan string)

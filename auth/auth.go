@@ -23,7 +23,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+
+	//"os"
+	"stream-chatbot/common"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
@@ -40,8 +42,8 @@ var (
 	//clientID = "<CLIENT_ID>"
 	//clientSecret = "<CLIENT_SECRET>"
 	// Consider storing the secret in an environment variable or a dedicated storage system.
-	clientID     = getEnvVar("clientId")
-	clientSecret = getEnvVar("clientSecret")
+	clientID     = common.ChatbotCreds["ClientID"]
+	clientSecret = common.ChatbotCreds["ClientSecret"]
 	scopes       = []string{"chat:read", "chat:edit", "channel:manage:polls"}
 	redirectURL  = "http://localhost:8080/redirect"
 	oauth2Config *oauth2.Config
@@ -51,14 +53,14 @@ var (
 	tokenChan    chan string
 )
 
-func getEnvVar(key string) string {
+/* func getEnvVar(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
 		fmt.Printf("Error: Environment variable %s is not set\n", key)
 		os.Exit(1)
 	}
 	return value
-}
+} */
 
 func generateRandomString(length int) string {
 	// Calculate the number of bytes needed for the desired string length
@@ -257,6 +259,7 @@ func TwitchAuth(TokenChan chan string) {
 		http.Handle(path, errorHandling(middleware(handler)))
 	}
 
+	log.Printf("Client ID: %s\n", clientID)
 	tokenChan = TokenChan
 	handleFunc("/", HandleRoot)
 	handleFunc("/login", HandleLogin)

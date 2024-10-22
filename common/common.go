@@ -7,6 +7,15 @@ import (
 	"os"
 )
 
+var ChatbotCreds map[string]string = map[string]string{
+	"ClientID":       "",
+	"ClientSecret":   "",
+	"TwitchUsername": "",
+	"TwitchChannel":  "",
+	"BroadcasterID":  "",
+	"TwitchToken":    "",
+}
+
 func CheckErr(err error, from string) {
 	if err != nil {
 		log.Printf("Error: %v\n", err)

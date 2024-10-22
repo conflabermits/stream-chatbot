@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"sort"
+	"stream-chatbot/common"
 	"strings"
 	"syscall"
 	"time"
@@ -23,14 +24,14 @@ import (
 
 var twitchToken string
 
-func getEnvVar(key string) string {
+/* func getEnvVar(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists {
 		fmt.Printf("Error: Environment variable %s is not set\n", key)
 		os.Exit(1)
 	}
 	return value
-}
+} */
 
 type PollPostData struct {
 	// Define your data structure here
@@ -87,11 +88,11 @@ func getPoll() (PollGetResponse, error) {
 	fmt.Printf("Length of 'twitchToken': %v\n", len(twitchToken))
 	bearerToken := twitchToken
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
-	req.Header.Set("Client-Id", getEnvVar("clientId"))
+	req.Header.Set("Client-Id", common.ChatbotCreds["ClientID"])
 
 	// Set the query parameters
 	q := req.URL.Query()
-	q.Add("broadcaster_id", getEnvVar("broadcaster_id"))
+	q.Add("broadcaster_id", common.ChatbotCreds["BroadcasterID"])
 	q.Add("status", "ACTIVE")
 	req.URL.RawQuery = q.Encode()
 
@@ -217,7 +218,7 @@ func sendPoll(pollText string) string {
 	// Define your URL and data
 	url := "https://api.twitch.tv/helix/polls"
 	data := PollPostData{
-		BroadcasterId:              getEnvVar("broadcaster_id"),
+		BroadcasterId:              common.ChatbotCreds["BroadcasterID"],
 		PollTitle:                  question,
 		Choices:                    choices,
 		ChannelPointsVotingEnabled: true,
@@ -245,7 +246,7 @@ func sendPoll(pollText string) string {
 	bearerToken := twitchToken
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
-	req.Header.Set("Client-Id", getEnvVar("clientId"))
+	req.Header.Set("Client-Id", common.ChatbotCreds["ClientID"])
 
 	// -H "Authorization: Bearer ${twitchToken}" -H "Client-Id: ${clientId}"
 
@@ -383,10 +384,10 @@ func Chatbot(TwitchToken string) {
 	//username := "your_twitch_username"
 	//token := "your_oauth_token"
 	//channel := "channel_to_join"
-	username := getEnvVar("twitchUsername") //e.g., "conflabermits"
+	username := common.ChatbotCreds["TwitchUsername"] //e.g., "conflabermits"
 	//token := getEnvVar("twitchToken")       //e.g., "oauth:<token>"
 	twitchToken = TwitchToken
-	channel := getEnvVar("twitchChannel") //e.g., "conflabermits"
+	channel := common.ChatbotCreds["TwitchChannel"] //e.g., "conflabermits"
 	fmt.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
 	fmt.Printf("username: %s\n", username)
 	fmt.Printf("channel: %s\n", channel)
