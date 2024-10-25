@@ -16,6 +16,86 @@ var ChatbotCreds map[string]string = map[string]string{
 	"TwitchToken":    "",
 }
 
+/*
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+func writeNewValueToProperties(filename, key, value string) error {
+	// Open the properties file for reading and writing
+	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Create a new scanner to read the file line by line
+	scanner := bufio.NewScanner(file)
+
+	// Create a temporary buffer to store the modified lines
+	var lines []string
+
+	// Iterate through each line in the file
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Check if the line contains the target key
+		if strings.HasPrefix(line, key+"=") {
+			// Replace the value with the new one
+			lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+		} else {
+			// Append the original line to the buffer
+			lines = append(lines, line)
+		}
+	}
+
+	// Check for scanning errors
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	// Truncate the file to overwrite its contents
+	if err := file.Truncate(0); err != nil {
+		return err
+	}
+
+	// Seek to the beginning of the file
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
+
+	// Write the modified lines back to the file
+	for _, line := range lines {
+		_, err = fmt.Fprintln(file, line)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func main() {
+	filename := "app.properties"
+	key := "key2"
+	newValue := "new_value"
+
+	err := writeNewValueToProperties(filename, key, newValue)
+	if err != nil {
+		fmt.Println("Error writing to properties file:", err)
+	} else {
+		fmt.Println("New value written successfully!")
+	}
+}
+
+*/
+
 func CheckErr(err error, from string) {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
