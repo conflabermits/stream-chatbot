@@ -191,6 +191,8 @@ func main() {
 		//<-tokenChan
 		//log.Println("Closed tokenChan")
 		log.Printf("Received token from auth module: %s\n", twitchToken[len(twitchToken)-5:])
+		err := common.WriteNewValueToProperties(options.CredsFile, "TwitchToken", twitchToken)
+		common.CheckErr(err, "main - Error writing new token to properties file")
 	}
 
 	go overlay.WebOverlay()

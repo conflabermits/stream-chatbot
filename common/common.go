@@ -1,10 +1,12 @@
 package common
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var ChatbotCreds map[string]string = map[string]string{
@@ -16,17 +18,7 @@ var ChatbotCreds map[string]string = map[string]string{
 	"TwitchToken":    "",
 }
 
-/*
-package main
-
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-)
-
-func writeNewValueToProperties(filename, key, value string) error {
+func WriteNewValueToProperties(filename, key, value string) error {
 	// Open the properties file for reading and writing
 	file, err := os.OpenFile(filename, os.O_RDWR, 0644)
 	if err != nil {
@@ -81,21 +73,6 @@ func writeNewValueToProperties(filename, key, value string) error {
 	return nil
 }
 
-func main() {
-	filename := "app.properties"
-	key := "key2"
-	newValue := "new_value"
-
-	err := writeNewValueToProperties(filename, key, newValue)
-	if err != nil {
-		fmt.Println("Error writing to properties file:", err)
-	} else {
-		fmt.Println("New value written successfully!")
-	}
-}
-
-*/
-
 func CheckErr(err error, from string) {
 	if err != nil {
 		log.Printf("Error: %v\n", err)
@@ -140,23 +117,3 @@ func CheckTwitchToken(token string) bool {
 		return false
 	}
 }
-
-/* func WriteToFile(filename string, data string) {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	CheckErr(err, "WriteToFile - Error opening file")
-	defer file.Close()
-
-	_, err = file.WriteString("data")
-	CheckErr(err, "WriteToFile - Error writing to file")
-}
-
-func ReadFromFile(filename string) string {
-	file, err := os.Open(filename)
-	CheckErr(err, "ReadFromFile - Error opening file")
-	defer file.Close()
-
-	data := make([]byte, 1024)
-	count, err := file.Read(data)
-	CheckErr(err, "ReadFromFile - Error reading from file")
-	return string(data[:count])
-} */
