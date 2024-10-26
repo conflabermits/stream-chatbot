@@ -25,7 +25,7 @@ import (
 	"net/http"
 
 	//"os"
-	"stream-chatbot/common"
+	//"stream-chatbot/common"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
@@ -42,15 +42,16 @@ var (
 	//clientID = "<CLIENT_ID>"
 	//clientSecret = "<CLIENT_SECRET>"
 	// Consider storing the secret in an environment variable or a dedicated storage system.
-	clientID     = common.ChatbotCreds["ClientID"]
-	clientSecret = common.ChatbotCreds["ClientSecret"]
+	chatbotCreds map[string]string
+	tokenChan    chan string
+	clientID     string
+	clientSecret string
 	scopes       = []string{"chat:read", "chat:edit", "channel:manage:polls"}
 	redirectURL  = "http://localhost:8080/redirect"
 	oauth2Config *oauth2.Config
 	// Generate a random cookieSecret on each run
 	cookieSecret = []byte(generateRandomString(27))
 	cookieStore  = sessions.NewCookieStore(cookieSecret)
-	tokenChan    chan string
 )
 
 /* func getEnvVar(key string) string {
@@ -210,9 +211,13 @@ func AnnotateError(err error, annotation string, code int) error {
 
 type Handler func(http.ResponseWriter, *http.Request) error
 
-func TwitchAuth(TokenChan chan string) {
+func TwitchAuth(TokenChan chan string, ChatbotCreds map[string]string) {
 	// Gob encoding for gorilla/sessions
 	gob.Register(&oauth2.Token{})
+
+	chatbotCreds = ChatbotCreds
+	clientID = chatbotCreds["ClientID"]
+	clientSecret = chatbotCreds["ClientSecret"]
 
 	oauth2Config = &oauth2.Config{
 		ClientID:     clientID,

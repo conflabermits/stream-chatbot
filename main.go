@@ -184,7 +184,7 @@ func main() {
 		log.Println("Stored twitchToken is invalid")
 		tokenChan := make(chan string)
 		log.Println("Created token channel in main")
-		go auth.TwitchAuth(tokenChan)
+		go auth.TwitchAuth(tokenChan, common.ChatbotCreds)
 		log.Println("Kicked off TwitchAuth goroutine")
 		twitchToken = <-tokenChan
 		log.Println("Passed token from tokenChan to var")
