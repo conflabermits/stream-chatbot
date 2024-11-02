@@ -2,13 +2,14 @@
 
 /*
 Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-
+Licensed under the Apache License, Version 2.0 (the "License").
+You may not use this file except in compliance with the License.
+A copy of the License is located at
 	http://aws.amazon.com/apache2.0/
-
-	or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
+or in the "license" file accompanying this file.
+This file is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and limitations under the License.
 */
 
 package auth
@@ -39,9 +40,6 @@ const (
 )
 
 var (
-	//clientID = "<CLIENT_ID>"
-	//clientSecret = "<CLIENT_SECRET>"
-	// Consider storing the secret in an environment variable or a dedicated storage system.
 	chatbotCreds map[string]string
 	tokenChan    chan string
 	clientID     string
@@ -53,15 +51,6 @@ var (
 	cookieSecret = []byte(generateRandomString(27))
 	cookieStore  = sessions.NewCookieStore(cookieSecret)
 )
-
-/* func getEnvVar(key string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		fmt.Printf("Error: Environment variable %s is not set\n", key)
-		os.Exit(1)
-	}
-	return value
-} */
 
 func generateRandomString(length int) string {
 	// Calculate the number of bytes needed for the desired string length
@@ -182,7 +171,6 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 
 // HumanReadableError represents error information
 // that can be fed back to a human user.
-//
 // This prevents internal state that might be sensitive
 // being leaked to the outside world.
 type HumanReadableError interface {

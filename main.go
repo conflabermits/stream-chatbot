@@ -14,16 +14,6 @@ import (
 	"strings"
 )
 
-/*
-1. Check token validity
-    * [Twitch dev documentation - How to validate a token](https://dev.twitch.tv/docs/authentication/validate-tokens/#how-to-validate-a-token)
-    * `curl -X GET 'https://id.twitch.tv/oauth2/validate' -H 'Authorization: OAuth <token>'`
-2. If token is invalid, start oauth process, return token to synchronized channel
-    * [Go By Example - Channel Synchonization](https://gobyexample.com/channel-synchronization)
-3. Start chatbot
-4. Start web overlay
-*/
-
 var ChatbotVars = []string{
 	"ClientID",
 	"ClientSecret",
@@ -32,35 +22,6 @@ var ChatbotVars = []string{
 	"BroadcasterID",
 	"TwitchToken",
 }
-
-/* type ChatbotCreds struct {
-	ClientID       string
-	ClientSecret   string
-	TwitchUsername string
-	TwitchChannel  string
-	BroadcasterID  string
-	TwitchToken    string
-} */
-
-/* var ChatbotCreds map[string]string = map[string]string{
-	"ClientID":       "",
-	"ClientSecret":   "",
-	"TwitchUsername": "",
-	"TwitchChannel":  "",
-	"BroadcasterID":  "",
-	"TwitchToken":    "",
-} */
-//var ChatbotCreds = common.ChatbotCreds
-
-/* ChatbotCreds{
-	ClientID:       "",
-	ClientSecret:   "",
-	TwitchUsername: "",
-	TwitchChannel:  "",
-	BroadcasterID:  "",
-	TwitchToken:    "",
-} */
-//var ChatbotCreds = &ChatbotCreds{}
 
 type Options struct {
 	CredsFile     string
@@ -85,7 +46,6 @@ func parseArgs() (*Options, error) {
 	return options, nil
 }
 
-// func assignVar(line string, creds *ChatbotCreds) {
 func assignVar(line string) {
 	keyval := strings.Split(line, "=")
 	key := strings.TrimSpace(keyval[0])
@@ -112,7 +72,6 @@ func assignVar(line string) {
 }
 
 func getChatbotCredsFromFile(filename string) {
-	//creds := &ChatbotCreds{}
 	file, err := os.Open(filename)
 	common.CheckErr(err, "getChatbotCredsFromFile - Error opening file")
 	defer file.Close()
@@ -125,7 +84,6 @@ func getChatbotCredsFromFile(filename string) {
 }
 
 func getChatbotCredsFromEnv() {
-	//creds := &ChatbotCreds{}
 	for _, key := range ChatbotVars {
 		value := common.GetEnvVar(key)
 		switch key {
@@ -152,11 +110,6 @@ func main() {
 	options, err := parseArgs()
 	common.CheckErr(err, "parseArgs")
 
-	/* for _, key := range ChatbotVars {
-		log.Printf("Creating empty key in ChatbotCreds: %s\n", key)
-		ChatbotCreds[key] = ""
-	} */
-
 	if options.CredsFile != "" {
 		log.Printf("Using credentials file: %s\n", options.CredsFile)
 		getChatbotCredsFromFile(options.CredsFile)
@@ -166,8 +119,8 @@ func main() {
 		getChatbotCredsFromEnv()
 	}
 	if options.CredsOverride != "" {
-		log.Printf("Overriding credentials with provided values\n")
 		//For each comma-separated key-value pair, override the value of the key with the provided value
+		log.Printf("Overriding credentials with provided values\n")
 	}
 
 	twitchToken := common.ChatbotCreds["TwitchToken"]
@@ -197,5 +150,6 @@ func main() {
 
 	go overlay.WebOverlay()
 	log.Println("Kicked off WebOverlay goroutine")
+
 	chatbot.Chatbot(twitchToken)
 }

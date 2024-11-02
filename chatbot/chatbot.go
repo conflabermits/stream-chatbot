@@ -24,17 +24,7 @@ import (
 
 var twitchToken string
 
-/* func getEnvVar(key string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		fmt.Printf("Error: Environment variable %s is not set\n", key)
-		os.Exit(1)
-	}
-	return value
-} */
-
 type PollPostData struct {
-	// Define your data structure here
 	BroadcasterId              string           `json:"broadcaster_id"`
 	PollTitle                  string           `json:"title"`
 	Choices                    []PollPostChoice `json:"choices"`
@@ -248,8 +238,6 @@ func sendPoll(pollText string) string {
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	req.Header.Set("Client-Id", common.ChatbotCreds["ClientID"])
 
-	// -H "Authorization: Bearer ${twitchToken}" -H "Client-Id: ${clientId}"
-
 	// Send the request with a client
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -381,13 +369,9 @@ func sendRequest() (*Response, error) {
 
 func Chatbot(TwitchToken string) {
 	// Set your Twitch username, OAuth token, and channel to join
-	//username := "your_twitch_username"
-	//token := "your_oauth_token"
-	//channel := "channel_to_join"
-	username := common.ChatbotCreds["TwitchUsername"] //e.g., "conflabermits"
-	//token := getEnvVar("twitchToken")       //e.g., "oauth:<token>"
+	username := common.ChatbotCreds["TwitchUsername"]
 	twitchToken = TwitchToken
-	channel := common.ChatbotCreds["TwitchChannel"] //e.g., "conflabermits"
+	channel := common.ChatbotCreds["TwitchChannel"]
 	fmt.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
 	fmt.Printf("username: %s\n", username)
 	fmt.Printf("channel: %s\n", channel)
