@@ -1,4 +1,6 @@
-clientId=0123456789abcdefghijklmnopqrst
-clientSecret=abcdefghijklmnopqrstuvwxyz0123
-twitchUsername=conflabermits
-twitchChannel=conflabermits
+ClientID=0123456789abcdefghijklmnopqrst
+ClientSecret=abcdefghijklmnopqrstuvwxyz0123
+TwitchUsername=bot_username
+TwitchChannel=streamer_channel
+BroadcasterID=123456789
+TwitchToken=0123456789abcdefghijklmnopqrst
