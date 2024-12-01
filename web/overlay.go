@@ -2,12 +2,28 @@ package overlay
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"regexp"
+	"strconv"
+
+	"golang.org/x/net/html"
 )
 
 //go:embed static
 var content embed.FS
+
+type Options struct {
+	Url     string
+	Port    string
+	Timeout int
+}
+
+var targetUrl string
+var pageTimeout string
+var prevDonoAmount float64 = 0.01
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	htmlContent, err := content.ReadFile("static/index.html")
@@ -43,45 +59,10 @@ func WebOverlay() {
 
 // Code from original donorbox main.go below
 
-/*
-package main
-
-import (
-	"embed"
-	"flag"
-	"fmt"
-	"net/http"
-	"os"
-	"regexp"
-	"strconv"
-
-	"golang.org/x/net/html"
-)
-
-//go:embed images
-var fsys embed.FS
-*/
-/*
-TO DO:
-* FIX IMAGES!! Either fix path or host externally or do an FS embed!
-* Turn HTML content into a template
-* Give the HTML template a button to save changes and reload with new values
-*/
-/*
-type Options struct {
-	Url     string
-	Port    string
-	Timeout int
-}
-
-var targetUrl string
-var pageTimeout string
-var prevDonoAmount float64 = 0.01
-
 func parseArgs() (*Options, error) {
 	options := &Options{}
-	flag.StringVar(&options.Url, "url", "http://localhost:8080", "Donorbox URL to check")
-	flag.StringVar(&options.Port, "port", "38080", "Port to run the local web server")
+	flag.StringVar(&options.Url, "url", "https://donorbox.org/support-black-girls-code/fundraiser/christopher-dunaj", "Donorbox URL to check")
+	flag.StringVar(&options.Port, "port", "28080", "Port to run the local web server")
 	flag.IntVar(&options.Timeout, "timeout", 60, "Page refresh rate, in seconds")
 	flag.Usage = func() {
 		fmt.Printf("Usage: <app> [options]\n\n")
@@ -94,7 +75,7 @@ func parseArgs() (*Options, error) {
 	return options, nil
 }
 
-func main() {
+func DonorboxOverlay() {
 	options, err := parseArgs()
 	if err != nil {
 		os.Exit(1)
@@ -103,7 +84,7 @@ func main() {
 	fmt.Printf("Server starting on http://localhost:" + options.Port + "\n")
 	fmt.Printf("Server checking URL: " + options.Url + "\n")
 
-	http.Handle("/images/", http.FileServer(http.FS(fsys)))
+	http.Handle("/static/images/", http.FileServer(http.FS(content)))
 
 	http.HandleFunc("/", serveHTML)
 	http.ListenAndServe(":"+options.Port, nil)
@@ -249,10 +230,10 @@ func getDonorboxProgress() string {
 	`
 
 	var newdono_html_body string = `
-		<body style="background-image: url('images/rainbow-sparkle-fireworks.gif');">
+		<body style="background-image: url('static/images/rainbow-sparkle-fireworks.gif');">
 		<div class="main">
-			<h1 style="background-image: url('images/red_fireworks.gif');">Donorbox progress:</h1>
-			<p style="background-image: url('images/confetti.gif');">
+			<h1 style="background-image: url('static/images/red_fireworks.gif');">Donorbox progress:</h1>
+			<p style="background-image: url('static/images/confetti.gif');">
 			Number of contributors: ` + paidCount + `<BR>
 			Total raised: $` + fmt.Sprintf("%g", totalRaised) + `<BR>
 			Raise goal: $` + fmt.Sprintf("%g", raiseGoal) + `
@@ -261,7 +242,7 @@ func getDonorboxProgress() string {
 		<div class="rainbow-text">
 			WE HAVE A NEW DONATION!!
 		</div>
-		<img src="images/rainbow_fireworks.gif" alt="fireworks gif" />
+		<img src="static/images/rainbow_fireworks.gif" alt="fireworks gif" />
 		</body>
 	`
 
@@ -277,4 +258,3 @@ func getDonorboxProgress() string {
 	return html_body
 
 }
-*/

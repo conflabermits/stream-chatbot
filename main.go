@@ -150,6 +150,8 @@ func main() {
 
 	go overlay.WebOverlay()
 	log.Println("Kicked off WebOverlay goroutine")
+	go overlay.DonorboxOverlay()
+	log.Println("Kicked off DonorboxOverlay goroutine")
 
 	chatbot.Chatbot(twitchToken)
 }
