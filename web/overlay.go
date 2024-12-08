@@ -86,7 +86,7 @@ func DonorboxOverlay() {
 
 	http.Handle("/static/images/", http.FileServer(http.FS(content)))
 
-	http.HandleFunc("/", serveHTML)
+	http.HandleFunc("/donorbox", serveHTML)
 	http.ListenAndServe(":"+options.Port, nil)
 }
 
