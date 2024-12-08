@@ -4,6 +4,8 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"html/template"
+	"io/fs"
 	"net/http"
 	"os"
 	"regexp"
@@ -90,63 +92,36 @@ func DonorboxOverlay() {
 	http.ListenAndServe(":"+options.Port, nil)
 }
 
-func serveHTML(w http.ResponseWriter, r *http.Request) {
-	htmlContent := `
-		<!DOCTYPE html>
-		<html lang="en">
-			<head>
-				<meta charset="UTF-8">
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
-				<link rel="icon" href="data:,">
-				<title>Donorbox Progress Overlay</title>
-				<style type="text/css">
-					* {
-						width: auto;
-						font-family: Verdana, Arial, sans-serif;
-						font-weight: bold;
-					}
-					h1 {
-						font-size: 24px;
-					}
-					div.main {
-						font-size: 18px;
-						color: white;
-						text-shadow: 0 0 2px blue, 0 0 4px hotpink;
-					}
-					.rainbow-text {
-						font-size: 36px;
-						background: linear-gradient(45deg, #f06, #9f6, #06f, #f06, #9f6, #06f);
-						background-size: 400% 400%;
-						background-clip: text;
-						-webkit-background-clip: text;
-						-webkit-text-fill-color: transparent;
-						animation: rainbow-animation 6s linear infinite;
-					}
-					@keyframes rainbow-animation {
-						0% {
-							background-position: 0 50%;
-						}
-						100% {
-							background-position: 100% 50%;
-						}
-					}
-				</style>
-				<script>
-					function reloadPage() {
-						location.reload();
-					}
-					setTimeout(reloadPage, ` + pageTimeout + `); // Reload every N milliseconds
-				</script>
-			</head>
-			` + getDonorboxProgress() + `
-		</html>
-	`
-
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, htmlContent)
+type HTMLVars struct {
+	PageTimeout      string
+	DonorboxProgress ProgressVars
 }
 
-func getDonorboxProgress() string {
+type ProgressVars struct {
+	NewDono     bool
+	TotalRaised string
+	PaidCount   string
+	RaiseGoal   string
+}
+
+func serveHTML(w http.ResponseWriter, r *http.Request) {
+	filesys := fs.FS(content)
+	tmpl := template.Must(template.ParseFS(filesys, "static/donorbox.html"))
+	donorboxProgress, err := getDonorboxProgress()
+	if err != nil {
+		http.Error(w, "Error getting Donorbox progress", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	result := HTMLVars{
+		PageTimeout:      pageTimeout,
+		DonorboxProgress: donorboxProgress,
+	}
+	tmpl.Execute(w, result)
+}
+
+func getDonorboxProgress() (ProgressVars, error) {
 	// Example code from https://www.makeuseof.com/parse-and-generate-html-in-go/
 
 	//targetUrl := "http://localhost:8080/" // For local testing
@@ -156,7 +131,7 @@ func getDonorboxProgress() string {
 	resp, err := http.Get(targetUrl)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "Error"
+		return ProgressVars{}, err
 	}
 
 	defer resp.Body.Close()
@@ -165,7 +140,7 @@ func getDonorboxProgress() string {
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return "Error"
+		return ProgressVars{}, err
 	}
 
 	var totalRaised float64
@@ -216,45 +191,15 @@ func getDonorboxProgress() string {
 	fmt.Printf("  Total raised: $%g\n", totalRaised)
 	fmt.Printf("  Raise goal: $%g\n", raiseGoal)
 
-	var standard_html_body string = `
-		<body>
-		<div class="main">
-			<h1>Donorbox progress:</h1>
-			<p>
-				Number of contributors: ` + paidCount + `<BR>
-				Total raised: $` + fmt.Sprintf("%g", totalRaised) + `<BR>
-				Raise goal: $` + fmt.Sprintf("%g", raiseGoal) + `
-			</p>
-		</div>
-		</body>
-	`
-
-	var newdono_html_body string = `
-		<body style="background-image: url('static/images/rainbow-sparkle-fireworks.gif');">
-		<div class="main">
-			<h1 style="background-image: url('static/images/red_fireworks.gif');">Donorbox progress:</h1>
-			<p style="background-image: url('static/images/confetti.gif');">
-			Number of contributors: ` + paidCount + `<BR>
-			Total raised: $` + fmt.Sprintf("%g", totalRaised) + `<BR>
-			Raise goal: $` + fmt.Sprintf("%g", raiseGoal) + `
-		</p>
-		</div>
-		<div class="rainbow-text">
-			WE HAVE A NEW DONATION!!
-		</div>
-		<img src="static/images/rainbow_fireworks.gif" alt="fireworks gif" />
-		</body>
-	`
-
-	var html_body string
-
-	if prevDonoAmount != 0.01 && prevDonoAmount < totalRaised {
-		html_body = newdono_html_body
-	} else {
-		html_body = standard_html_body
-	}
 	prevDonoAmount = totalRaised
 
-	return html_body
+	results := ProgressVars{
+		NewDono:     prevDonoAmount != 0.01 && prevDonoAmount < totalRaised,
+		TotalRaised: fmt.Sprintf("%g", totalRaised),
+		PaidCount:   paidCount,
+		RaiseGoal:   fmt.Sprintf("%g", raiseGoal),
+	}
+
+	return results, nil
 
 }
