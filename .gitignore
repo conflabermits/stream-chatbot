@@ -23,3 +23,6 @@ go.work
 # Private credentials files (if any)
 .creds*
 .token*
+
+# Local log files
+logs/*

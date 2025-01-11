@@ -105,11 +105,17 @@ func getChatbotCredsFromEnv() {
 }
 
 func main() {
+	// Ensure the logs directory exists
+	if _, err := os.Stat("logs"); os.IsNotExist(err) {
+		err := os.Mkdir("logs", 0755)
+		common.CheckErr(err, "main - Error creating logs directory")
+	}
 	// Create a log file with the current date and time (GH Copilot)
-	logFileName := time.Now().Format("2025-01-11_12-34-56") + ".log"
+	logFileName := "logs/" + time.Now().Format("2006-01-02_15-04-05") + ".log"
 	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	common.CheckErr(err, "main - Error opening log file")
 	defer logFile.Close()
+	// Set log output to the file
 	log.SetOutput(logFile)
 
 	log.Println("Started program!")
