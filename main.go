@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"stream-chatbot/auth"
 	"stream-chatbot/chatbot"
@@ -104,6 +105,13 @@ func getChatbotCredsFromEnv() {
 }
 
 func main() {
+	// Create a log file with the current date and time (GH Copilot)
+	logFileName := time.Now().Format("2025-01-11_12-34-56") + ".log"
+	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	common.CheckErr(err, "main - Error opening log file")
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
 	log.Println("Started program!")
 	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
 
