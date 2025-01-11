@@ -70,12 +70,12 @@ func getPoll() (PollGetResponse, error) {
 	// Create a new GET request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println("Error creating request:", err)
+		log.Println("Error creating request:", err)
 		return PollGetResponse{}, err
 	}
 
 	// Set the headers
-	fmt.Printf("Length of 'twitchToken': %v\n", len(twitchToken))
+	log.Printf("Length of 'twitchToken': %v\n", len(twitchToken))
 	bearerToken := twitchToken
 	req.Header.Set("Authorization", "Bearer "+bearerToken)
 	req.Header.Set("Client-Id", common.ChatbotCreds["ClientID"])
@@ -90,7 +90,7 @@ func getPoll() (PollGetResponse, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request:", err)
+		log.Println("Error sending request:", err)
 		return PollGetResponse{}, err
 	}
 	defer resp.Body.Close()
@@ -98,17 +98,17 @@ func getPoll() (PollGetResponse, error) {
 	// Optionally, handle the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
+		log.Println("Error reading response body:", err)
 		return PollGetResponse{}, err
 	}
 
-	fmt.Println("Response status:", resp.StatusCode)
+	log.Println("Response status:", resp.StatusCode)
 
 	// Parse the JSON data into a Data struct
 	var jsonResponse PollGetResponse
 	err = json.Unmarshal(body, &jsonResponse)
 	if err != nil {
-		fmt.Println("Error parsing JSON data", err)
+		log.Println("Error parsing JSON data", err)
 		return PollGetResponse{}, err
 	}
 
@@ -119,7 +119,7 @@ func getPollResults() string {
 	jsonResponse, err := getPoll()
 	if err != nil {
 		errorMessage := "Error getting poll with getPoll()"
-		fmt.Println(errorMessage, err)
+		log.Println(errorMessage, err)
 		return errorMessage
 	}
 
@@ -134,7 +134,7 @@ func getPollResults() string {
 		}
 	} else {
 		emptyMessage := "Array is empty"
-		fmt.Println(emptyMessage)
+		log.Println(emptyMessage)
 		return emptyMessage
 	}
 
@@ -144,7 +144,7 @@ func getPollResults() string {
 func isPollActive() bool {
 	jsonResponse, err := getPoll()
 	if err != nil {
-		fmt.Println("Error getting poll with getPoll()", err)
+		log.Println("Error getting poll with getPoll()", err)
 	}
 
 	var isActive bool
@@ -158,7 +158,7 @@ func isPollActive() bool {
 			isActive = false
 		}
 	} else {
-		fmt.Println("Array is empty")
+		log.Println("Array is empty")
 		isActive = false
 	}
 
@@ -172,11 +172,11 @@ func sendPoll(pollText string) string {
 	log.Println("pollLength:", pollLength)
 	if pollLength < 3 {
 		errorMessage := "Not enough choices"
-		fmt.Println(errorMessage)
+		log.Println(errorMessage)
 		return errorMessage
 	} else if pollLength > 6 {
 		errorMessage := "Too many choices"
-		fmt.Println(errorMessage)
+		log.Println(errorMessage)
 		return errorMessage
 	}
 
@@ -192,7 +192,7 @@ func sendPoll(pollText string) string {
 			} else {
 				question = strings.TrimSpace(phrase)
 			}
-			fmt.Println("Identified question as:", question)
+			log.Println("Identified question as:", question)
 		} else {
 			// Needs to be 25 chars or less
 			if len(strings.TrimSpace(phrase)) > 25 {
@@ -200,7 +200,7 @@ func sendPoll(pollText string) string {
 			} else {
 				choice = strings.TrimSpace(phrase)
 			}
-			fmt.Printf("Identified choice %s as: %s\n", fmt.Sprint(index), choice)
+			log.Printf("Identified choice %s as: %s\n", fmt.Sprint(index), choice)
 			choices = append(choices, PollPostChoice{Title: choice})
 		}
 	}
@@ -220,7 +220,7 @@ func sendPoll(pollText string) string {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		errorMessage := "Error marshalling JSON"
-		fmt.Println(errorMessage, err)
+		log.Println(errorMessage, err)
 		return errorMessage
 	}
 
@@ -228,7 +228,7 @@ func sendPoll(pollText string) string {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		errorMessage := "Error creating request"
-		fmt.Println(errorMessage, err)
+		log.Println(errorMessage, err)
 		return errorMessage
 	}
 
@@ -243,7 +243,7 @@ func sendPoll(pollText string) string {
 	resp, err := client.Do(req)
 	if err != nil {
 		errorMessage := "Error sending request"
-		fmt.Println(errorMessage, err)
+		log.Println(errorMessage, err)
 		return errorMessage
 	}
 	defer resp.Body.Close()
@@ -252,12 +252,12 @@ func sendPoll(pollText string) string {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		errorMessage := "Error reading response body"
-		fmt.Println(errorMessage, err)
+		log.Println(errorMessage, err)
 		return errorMessage
 	}
 
-	fmt.Println("Response status:", resp.StatusCode)
-	fmt.Println("Response body:", string(body))
+	log.Println("Response status:", resp.StatusCode)
+	log.Println("Response body:", string(body))
 
 	if resp.StatusCode != 200 {
 		return "Error creating poll"
@@ -372,9 +372,11 @@ func Chatbot(TwitchToken string) {
 	username := common.ChatbotCreds["TwitchUsername"]
 	twitchToken = TwitchToken
 	channel := common.ChatbotCreds["TwitchChannel"]
-	fmt.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
-	fmt.Printf("username: %s\n", username)
-	fmt.Printf("channel: %s\n", channel)
+	log.Printf("Received token from main module: %s\n", twitchToken[len(twitchToken)-5:])
+	fmt.Printf("Using Twitch account: %s\n", username)
+	log.Printf("Using Twitch account: %s\n", username)
+	fmt.Printf("Attaching to channel: %s\n", channel)
+	log.Printf("Attaching to channel: %s\n", channel)
 
 	// Create a new Twitch client
 	client := twitch.NewClient(username, "oauth:"+twitchToken)
@@ -382,7 +384,7 @@ func Chatbot(TwitchToken string) {
 	// Register a callback for when the bot receives a message
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		// Print the message to the console
-		fmt.Printf("[%s] %s: %s\n", message.Channel, message.User.DisplayName, message.Message)
+		log.Printf("[%s] %s: %s\n", message.Channel, message.User.DisplayName, message.Message)
 
 		// You can add your own logic here to respond to messages
 		// For example, you can check for specific commands and reply accordingly

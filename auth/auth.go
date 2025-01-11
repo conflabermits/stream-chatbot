@@ -154,17 +154,17 @@ func HandleOAuth2Callback(w http.ResponseWriter, r *http.Request) (err error) {
 	session.Values[oauthTokenKey] = token
 
 	// Print the last 5 characters of the access token for debugging
-	fmt.Printf("Access token from auth.go: %s\n", token.AccessToken[len(token.AccessToken)-5:])
+	log.Printf("Access token from auth.go: %s\n", token.AccessToken[len(token.AccessToken)-5:])
 	//fmt.Printf("Access token: %s\n", token.AccessToken)
 	//fmt.Printf("Full token value: %v\n", token)
 
 	go func() {
 		tokenChan <- token.AccessToken
 	}()
-	fmt.Println("Sent token to channel")
+	log.Println("Sent token to channel")
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-	fmt.Println("Redirected to /")
+	log.Println("Redirected to /")
 
 	return
 }
@@ -258,6 +258,7 @@ func TwitchAuth(TokenChan chan string, ChatbotCreds map[string]string) {
 	handleFunc("/login", HandleLogin)
 	handleFunc("/redirect", HandleOAuth2Callback)
 
-	fmt.Println("Started running auth on http://localhost:8080/")
-	fmt.Println(http.ListenAndServe(":8080", nil))
+	log.Println("Started running auth on http://localhost:8080/")
+	fmt.Println("Open http://localhost:8080/ to authenticate with Twitch")
+	log.Println(http.ListenAndServe(":8080", nil))
 }
