@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -52,8 +53,8 @@ func WebOverlay() {
 
 	http.HandleFunc("/index", handleIndex)
 
-	fmt.Printf("Starting /overlay on port 28080\n")
-	err := http.ListenAndServe(":28080", nil)
+	log.Printf("Starting /overlay on port 18080\n")
+	err := http.ListenAndServe(":18080", nil)
 	if err != nil {
 		fmt.Printf("Error starting server: %v\n", err)
 	}
@@ -83,8 +84,10 @@ func DonorboxOverlay() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Server starting on http://localhost:" + options.Port + "\n")
-	fmt.Printf("Server checking URL: " + options.Url + "\n")
+	fmt.Printf("DonorboxOverlay starting on http://localhost:" + options.Port + "/donorbox" + "\n")
+	log.Printf("DonorboxOverlay starting on http://localhost:" + options.Port + "/donorbox" + "\n")
+	fmt.Printf("DonorboxOverlay checking URL: " + options.Url + "\n")
+	log.Printf("DonorboxOverlay checking URL: " + options.Url + "\n")
 
 	http.Handle("/static/images/", http.FileServer(http.FS(content)))
 
@@ -127,10 +130,10 @@ func getDonorboxProgress() (ProgressVars, error) {
 	//targetUrl := "http://localhost:8080/" // For local testing
 	//targetUrl := "https://donorbox.org/support-black-girls-code/fundraiser/christopher-dunaj" // For live testing
 
-	fmt.Println("Fetching URL:", targetUrl)
+	log.Println("Fetching URL:", targetUrl)
 	resp, err := http.Get(targetUrl)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return ProgressVars{}, err
 	}
 
@@ -139,7 +142,7 @@ func getDonorboxProgress() (ProgressVars, error) {
 	// Use the html package to parse the response body from the request
 	doc, err := html.Parse(resp.Body)
 	if err != nil {
-		fmt.Println("Error:", err)
+		log.Println("Error:", err)
 		return ProgressVars{}, err
 	}
 
@@ -157,13 +160,13 @@ func getDonorboxProgress() (ProgressVars, error) {
 					// Formatting the string to remove the dollar sign (https://www.makeuseof.com/go-formatting-numbers-currencies/)
 					totalRaised, err = strconv.ParseFloat(n.Data[1:], 64)
 					if err != nil {
-						fmt.Println("Error:", err)
+						log.Println("Error:", err)
 					}
 				}
 				if (n.Parent).Attr[i].Val == "bold" {
 					raiseGoal, err = strconv.ParseFloat(n.Data[1:], 64)
 					if err != nil {
-						fmt.Println("Error:", err)
+						log.Println("Error:", err)
 					}
 				}
 			}
@@ -187,9 +190,9 @@ func getDonorboxProgress() (ProgressVars, error) {
 
 	link(doc)
 
-	fmt.Println("  Number of contributors:", paidCount)
-	fmt.Printf("  Total raised: $%g\n", totalRaised)
-	fmt.Printf("  Raise goal: $%g\n", raiseGoal)
+	log.Println("  Number of contributors:", paidCount)
+	log.Printf("  Total raised: $%g\n", totalRaised)
+	log.Printf("  Raise goal: $%g\n", raiseGoal)
 
 	prevDonoAmount = totalRaised
 

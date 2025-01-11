@@ -119,7 +119,7 @@ func main() {
 	log.SetOutput(logFile)
 
 	log.Println("Started program!")
-	fmt.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
+	log.Printf("GOPATH is set to: %s\n", common.GetEnvVar("GOPATH"))
 
 	options, err := parseArgs()
 	common.CheckErr(err, "parseArgs")
