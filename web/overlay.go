@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -152,19 +153,22 @@ func getDonorboxProgress() (ProgressVars, error) {
 	var link func(*html.Node)
 	link = func(n *html.Node) {
 
-		dollarMatch, _ := regexp.MatchString("^\\$\\d{1,}", n.Data)
+		dollarMatch, _ := regexp.MatchString("^[\\s\\\n]{0,}\\$\\d{1,}", n.Data)
 
 		if dollarMatch { //&& n.Type == html.ElementNode {
 			for i := range (n.Parent).Attr {
 				if (n.Parent).Attr[i].Val == "total-raised" {
-					// Formatting the string to remove the dollar sign (https://www.makeuseof.com/go-formatting-numbers-currencies/)
-					totalRaised, err = strconv.ParseFloat(n.Data[1:], 64)
+					// Trim whitespace and newlines, then remove the dollar sign
+					cleaned := strings.TrimSpace(n.Data)[1:]
+					totalRaised, err = strconv.ParseFloat(cleaned, 64)
 					if err != nil {
 						log.Println("Error:", err)
 					}
 				}
 				if (n.Parent).Attr[i].Val == "bold" {
-					raiseGoal, err = strconv.ParseFloat(n.Data[1:], 64)
+					// Trim whitespace and newlines, then remove the dollar sign
+					cleaned := strings.TrimSpace(n.Data)[1:]
+					raiseGoal, err = strconv.ParseFloat(cleaned, 64)
 					if err != nil {
 						log.Println("Error:", err)
 					}
