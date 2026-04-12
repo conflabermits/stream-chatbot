@@ -368,7 +368,7 @@ func sendRequest() (*Response, error) {
 }
 
 // CommandHandler represents a function that handles a specific chat command
-type CommandHandler func(client *twitch.Client, message twitch.PrivateMessage, args string)
+type CommandHandler func(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string)
 
 var commandHandlers = map[string]CommandHandler{
 	"!hello":          handleHello,
@@ -384,18 +384,18 @@ var commandHandlers = map[string]CommandHandler{
 	"!getpollresults": handleGetPoll,
 }
 
-func handleHello(client *twitch.Client, message twitch.PrivateMessage, args string) {
-	log.Println("Detected !hello message")
+func handleHello(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
+	log.Printf("Detected %s message\n", cmd)
 	client.Say(message.Channel, "Hello, "+message.User.DisplayName+"!")
 }
 
-func handleBye(client *twitch.Client, message twitch.PrivateMessage, args string) {
-	log.Println("Detected !bye message")
+func handleBye(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
+	log.Printf("Detected %s message\n", cmd)
 	client.Say(message.Channel, "Goodbye, "+message.User.DisplayName+"! I'll miss you!")
 }
 
-func handleAbc(client *twitch.Client, message twitch.PrivateMessage, args string) {
-	log.Println("Detected !abc message")
+func handleAbc(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
+	log.Printf("Detected %s message\n", cmd)
 	if strings.TrimSpace(args) == "" {
 		client.Say(message.Channel, "You need to provide a message to alphabetize!")
 		return
@@ -403,21 +403,21 @@ func handleAbc(client *twitch.Client, message twitch.PrivateMessage, args string
 	client.Say(message.Channel, alphabetize(args))
 }
 
-func handleQuote(client *twitch.Client, message twitch.PrivateMessage, args string) {
-	log.Println("Detected !quote message")
+func handleQuote(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
+	log.Printf("Detected %s message\n", cmd)
 	client.Say(message.Channel, "Random quote -- " + getQuote() + ".. in bed.")
 }
 
-func handleGetPoll(client *twitch.Client, message twitch.PrivateMessage, args string) {
-	log.Println("Detected !getPoll message")
+func handleGetPoll(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
+	log.Printf("Detected %s message\n", cmd)
 	client.Say(message.Channel, getPollResults())
 }
 
-func handlePollRouter(client *twitch.Client, message twitch.PrivateMessage, args string) {
+func handlePollRouter(client *twitch.Client, message twitch.PrivateMessage, cmd string, args string) {
 	if strings.TrimSpace(args) == "" {
-		handleGetPoll(client, message, args)
+		handleGetPoll(client, message, cmd, args)
 	} else {
-		log.Println("Detected !poll [create] message")
+		log.Printf("Detected %s [create] message\n", cmd)
 		if isPollActive() {
 			client.Say(message.Channel, "Sorry, a poll is currently active, try again when it's done.")
 		} else {
@@ -459,7 +459,7 @@ func Chatbot(TwitchToken string) {
 		}
 
 		if handler, exists := commandHandlers[cmd]; exists {
-			handler(client, message, args)
+			handler(client, message, cmd, args)
 		}
 	})
 
