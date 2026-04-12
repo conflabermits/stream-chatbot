@@ -367,6 +367,66 @@ func sendRequest() (*Response, error) {
 	return r, nil
 }
 
+// CommandHandler represents a function that handles a specific chat command
+type CommandHandler func(client *twitch.Client, message twitch.PrivateMessage, args string)
+
+var commandHandlers = map[string]CommandHandler{
+	"!hello":          handleHello,
+	"!hellobot":       handleHello,
+	"!bye":            handleBye,
+	"!byebot":         handleBye,
+	"!abc":            handleAbc,
+	"!alpha":          handleAbc,
+	"!quote":          handleQuote,
+	"!randomquote":    handleQuote,
+	"!poll":           handlePollRouter,
+	"!getpoll":        handleGetPoll,
+	"!getpollresults": handleGetPoll,
+}
+
+func handleHello(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	log.Println("Detected !hello message")
+	client.Say(message.Channel, "Hello, "+message.User.DisplayName+"!")
+}
+
+func handleBye(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	log.Println("Detected !bye message")
+	client.Say(message.Channel, "Goodbye, "+message.User.DisplayName+"! I'll miss you!")
+}
+
+func handleAbc(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	log.Println("Detected !abc message")
+	if strings.TrimSpace(args) == "" {
+		client.Say(message.Channel, "You need to provide a message to alphabetize!")
+		return
+	}
+	client.Say(message.Channel, alphabetize(args))
+}
+
+func handleQuote(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	log.Println("Detected !quote message")
+	client.Say(message.Channel, "Random quote -- " + getQuote() + ".. in bed.")
+}
+
+func handleGetPoll(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	log.Println("Detected !getPoll message")
+	client.Say(message.Channel, getPollResults())
+}
+
+func handlePollRouter(client *twitch.Client, message twitch.PrivateMessage, args string) {
+	if strings.TrimSpace(args) == "" {
+		handleGetPoll(client, message, args)
+	} else {
+		log.Println("Detected !poll [create] message")
+		if isPollActive() {
+			client.Say(message.Channel, "Sorry, a poll is currently active, try again when it's done.")
+		} else {
+			client.Say(message.Channel, "Attempting to create a poll for @"+message.User.DisplayName+"...")
+			client.Say(message.Channel, sendPoll(strings.TrimSpace(args)))
+		}
+	}
+}
+
 func Chatbot(TwitchToken string) {
 	// Set your Twitch username, OAuth token, and channel to join
 	username := common.ChatbotCreds["TwitchUsername"]
@@ -386,50 +446,20 @@ func Chatbot(TwitchToken string) {
 		// Print the message to the console
 		log.Printf("[%s] %s: %s\n", message.Channel, message.User.DisplayName, message.Message)
 
-		// You can add your own logic here to respond to messages
-		// For example, you can check for specific commands and reply accordingly
-		// TODO: Make a function to parse messages using common conditions. Examples:
-		//   * startsWith(message.Message, "!string ")
-		//   * equals(message.Message, "!string")
-		//   * hasArg(message.Message, [eq,lt,gt], int)
-		//   * fromUser(message.Message, "user")
-		//   * fromRole(message.Message, [bc,mod,vip,sub,fol])
-		if message.Message == "!hello" || message.Message == "!hellobot" {
-			log.Println("Detected !hello message")
-			client.Say(message.Channel, "Hello, "+message.User.DisplayName+"!")
+		msgText := strings.TrimSpace(message.Message)
+		if !strings.HasPrefix(msgText, "!") {
+			return // Not a command
 		}
-		if message.Message == "!bye" || message.Message == "!byebot" {
-			log.Println("Detected !bye message")
-			client.Say(message.Channel, "Goodbye, "+message.User.DisplayName+"! I'll miss you!")
+
+		parts := strings.SplitN(msgText, " ", 2)
+		cmd := strings.ToLower(parts[0])
+		args := ""
+		if len(parts) > 1 {
+			args = parts[1]
 		}
-		if strings.HasPrefix(message.Message, "!abc ") || strings.HasPrefix(message.Message, "!alpha ") {
-			log.Println("Detected !abc message")
-			commandText := strings.TrimPrefix(message.Message, "!abc ")
-			//TODO: Ensure there is a message after the !abc command to be alphabetized
-			client.Say(message.Channel, alphabetize(commandText))
-		}
-		// Command ideas:
-		// !randomize - Randomize the words from the given message.
-		// !lore - Print a random line from a text file containing deep conflabermits lore.
-		if message.Message == "!quote" || message.Message == "!randomquote" {
-			log.Println("Detected !quote message")
-			client.Say(message.Channel, "Random quote -- "+getQuote()+".. in bed.")
-		}
-		if message.Message == "!poll" || message.Message == "!getPoll" || message.Message == "!getPollResults" {
-			log.Println("Detected !getPoll message")
-			client.Say(message.Channel, getPollResults())
-		}
-		if strings.HasPrefix(message.Message, "!poll ") {
-			log.Println("Detected !poll message")
-			if isPollActive() {
-				client.Say(message.Channel, "Sorry, a poll is currently active, try again when it's done.")
-				//} else if message.User.DisplayName != "conflabermits" {
-				//	client.Say(message.Channel, "Sorry, only accepting polls from conflabermits right now!")
-			} else {
-				client.Say(message.Channel, "Attempting to create a poll for @"+message.User.DisplayName+"...")
-				pollText := strings.TrimPrefix(message.Message, "!poll ")
-				client.Say(message.Channel, sendPoll(pollText))
-			}
+
+		if handler, exists := commandHandlers[cmd]; exists {
+			handler(client, message, args)
 		}
 	})
 
