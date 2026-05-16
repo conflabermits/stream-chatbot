@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gempir/go-twitch-irc/v4"
+	spotify_client "stream-chatbot/spotify"
 )
 
 var twitchToken string
@@ -383,54 +384,9 @@ func Chatbot(TwitchToken string) {
 
 	// Register a callback for when the bot receives a message
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
-		// Print the message to the console
-		log.Printf("[%s] %s: %s\n", message.Channel, message.User.DisplayName, message.Message)
-
-		// You can add your own logic here to respond to messages
-		// For example, you can check for specific commands and reply accordingly
-		// TODO: Make a function to parse messages using common conditions. Examples:
-		//   * startsWith(message.Message, "!string ")
-		//   * equals(message.Message, "!string")
-		//   * hasArg(message.Message, [eq,lt,gt], int)
-		//   * fromUser(message.Message, "user")
-		//   * fromRole(message.Message, [bc,mod,vip,sub,fol])
-		if message.Message == "!hello" || message.Message == "!hellobot" {
-			log.Println("Detected !hello message")
-			client.Say(message.Channel, "Hello, "+message.User.DisplayName+"!")
-		}
-		if message.Message == "!bye" || message.Message == "!byebot" {
-			log.Println("Detected !bye message")
-			client.Say(message.Channel, "Goodbye, "+message.User.DisplayName+"! I'll miss you!")
-		}
-		if strings.HasPrefix(message.Message, "!abc ") || strings.HasPrefix(message.Message, "!alpha ") {
-			log.Println("Detected !abc message")
-			commandText := strings.TrimPrefix(message.Message, "!abc ")
-			//TODO: Ensure there is a message after the !abc command to be alphabetized
-			client.Say(message.Channel, alphabetize(commandText))
-		}
-		// Command ideas:
-		// !randomize - Randomize the words from the given message.
-		// !lore - Print a random line from a text file containing deep conflabermits lore.
-		if message.Message == "!quote" || message.Message == "!randomquote" {
-			log.Println("Detected !quote message")
-			client.Say(message.Channel, "Random quote -- "+getQuote()+".. in bed.")
-		}
-		if message.Message == "!poll" || message.Message == "!getPoll" || message.Message == "!getPollResults" {
-			log.Println("Detected !getPoll message")
-			client.Say(message.Channel, getPollResults())
-		}
-		if strings.HasPrefix(message.Message, "!poll ") {
-			log.Println("Detected !poll message")
-			if isPollActive() {
-				client.Say(message.Channel, "Sorry, a poll is currently active, try again when it's done.")
-				//} else if message.User.DisplayName != "conflabermits" {
-				//	client.Say(message.Channel, "Sorry, only accepting polls from conflabermits right now!")
-			} else {
-				client.Say(message.Channel, "Attempting to create a poll for @"+message.User.DisplayName+"...")
-				pollText := strings.TrimPrefix(message.Message, "!poll ")
-				client.Say(message.Channel, sendPoll(pollText))
-			}
-		}
+		ProcessCommand(message.Message, message.User.DisplayName, message.User.Badges, func(response string) {
+			client.Say(message.Channel, response)
+		})
 	})
 
 	client.OnConnect(func() {
@@ -453,4 +409,106 @@ func Chatbot(TwitchToken string) {
 
 	// Disconnect from Twitch IRC on shutdown
 	client.Disconnect()
+}
+
+func ProcessCommand(message string, user string, badges map[string]int, sayFunc func(string)) {
+	log.Printf("[ProcessCommand] %s: %s\n", user, message)
+
+	say := func(response string) {
+		if sayFunc != nil {
+			sayFunc(response)
+		} else {
+			fmt.Println("Chatbot response:", response)
+		}
+	}
+
+	if message == "!hello" || message == "!hellobot" {
+		log.Println("Detected !hello message")
+		say("Hello, " + user + "!")
+	}
+	if message == "!bye" || message == "!byebot" {
+		log.Println("Detected !bye message")
+		say("Goodbye, " + user + "! I'll miss you!")
+	}
+	if strings.HasPrefix(message, "!abc ") || strings.HasPrefix(message, "!alpha ") {
+		log.Println("Detected !abc message")
+		commandText := strings.TrimPrefix(message, "!abc ")
+		if strings.HasPrefix(message, "!alpha ") {
+			commandText = strings.TrimPrefix(message, "!alpha ")
+		}
+		say(alphabetize(commandText))
+	}
+	if message == "!quote" || message == "!randomquote" {
+		log.Println("Detected !quote message")
+		say("Random quote -- " + getQuote() + ".. in bed.")
+	}
+	if message == "!poll" || message == "!getPoll" || message == "!getPollResults" {
+		log.Println("Detected !getPoll message")
+		say(getPollResults())
+	}
+	if strings.HasPrefix(message, "!poll ") {
+		log.Println("Detected !poll message")
+		if isPollActive() {
+			say("Sorry, a poll is currently active, try again when it's done.")
+		} else {
+			say("Attempting to create a poll for @" + user + "...")
+			pollText := strings.TrimPrefix(message, "!poll ")
+			say(sendPoll(pollText))
+		}
+	}
+
+	// Spotify Commands
+	if strings.HasPrefix(message, "!spoopify") {
+		parts := strings.Fields(message)
+		if len(parts) < 2 {
+			say("Usage: !spoopify <search|info|add|queue|list|pause|play|next|resume>")
+			return
+		}
+		
+		subcommand := strings.ToLower(parts[1])
+		args := strings.Join(parts[2:], " ")
+
+		switch subcommand {
+		case "search":
+			if args == "" {
+				say("Usage: !spoopify search <query>")
+				return
+			}
+			say(spotify_client.Search(args))
+		case "info":
+			if args == "" {
+				say("Usage: !spoopify info <song ID>")
+				return
+			}
+			say(spotify_client.GetInfo(args))
+		case "add":
+			if args == "" {
+				say("Usage: !spoopify add <song ID or query>")
+				return
+			}
+			say(spotify_client.AddToQueue(args))
+		case "queue", "list":
+			say(spotify_client.GetQueue())
+		case "pause":
+			if _, isBc := badges["broadcaster"]; isBc || badges["moderator"] == 1 {
+				say(spotify_client.Pause())
+			} else {
+				say("You don't have permission to pause playback.")
+			}
+		case "play", "resume":
+			if _, isBc := badges["broadcaster"]; isBc || badges["moderator"] == 1 {
+				say(spotify_client.Play())
+			} else {
+				say("You don't have permission to resume playback.")
+			}
+		case "next", "skip":
+			if _, isBc := badges["broadcaster"]; isBc || badges["moderator"] == 1 {
+				say(spotify_client.Next())
+			} else {
+				say("You don't have permission to skip tracks.")
+			}
+		default:
+			say("Unknown spoopify command. Valid commands: search, info, add, queue, list, pause, play, next, resume")
+		}
+	}
 }

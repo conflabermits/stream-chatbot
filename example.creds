@@ -4,3 +4,6 @@ TwitchUsername=bot_username
 TwitchChannel=streamer_channel
 BroadcasterID=123456789
 TwitchToken=0123456789abcdefghijklmnopqrst
+SpotifyClientID=0123456789abcdefghijklmnopqrst
+SpotifyClientSecret=abcdefghijklmnopqrstuvwxyz0123
+SpotifyToken=0123456789abcdefghijklmnopqrst

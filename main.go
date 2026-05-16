@@ -8,9 +8,14 @@ import (
 	"os"
 	"time"
 
+	"encoding/base64"
+	"encoding/json"
+	"golang.org/x/oauth2"
+
 	"stream-chatbot/auth"
 	"stream-chatbot/chatbot"
 	"stream-chatbot/common"
+	spotify_client "stream-chatbot/spotify"
 	overlay "stream-chatbot/web"
 	"strings"
 )
@@ -22,6 +27,9 @@ var ChatbotVars = []string{
 	"TwitchChannel",
 	"BroadcasterID",
 	"TwitchToken",
+	"SpotifyClientID",
+	"SpotifyClientSecret",
+	"SpotifyToken",
 }
 
 type Options struct {
@@ -66,6 +74,12 @@ func assignVar(line string) {
 				common.ChatbotCreds["BroadcasterID"] = value
 			case "TwitchToken":
 				common.ChatbotCreds["TwitchToken"] = value
+			case "SpotifyClientID":
+				common.ChatbotCreds["SpotifyClientID"] = value
+			case "SpotifyClientSecret":
+				common.ChatbotCreds["SpotifyClientSecret"] = value
+			case "SpotifyToken":
+				common.ChatbotCreds["SpotifyToken"] = value
 			}
 		}
 	}
@@ -100,6 +114,12 @@ func getChatbotCredsFromEnv() {
 			common.ChatbotCreds["BroadcasterID"] = value
 		case "TwitchToken":
 			common.ChatbotCreds["TwitchToken"] = value
+		case "SpotifyClientID":
+			common.ChatbotCreds["SpotifyClientID"] = value
+		case "SpotifyClientSecret":
+			common.ChatbotCreds["SpotifyClientSecret"] = value
+		case "SpotifyToken":
+			common.ChatbotCreds["SpotifyToken"] = value
 		}
 	}
 }
@@ -162,10 +182,62 @@ func main() {
 		common.CheckErr(err, "main - Error writing new token to properties file")
 	}
 
+	// Spotify Auth and Initialization
+	spotifyTokenStr := common.ChatbotCreds["SpotifyToken"]
+	var spotifyTok *oauth2.Token
+
+	if len(spotifyTokenStr) > 10 {
+		// Attempt to decode base64 and unmarshal
+		decodedBytes, err := base64.StdEncoding.DecodeString(spotifyTokenStr)
+		if err == nil {
+			err = json.Unmarshal(decodedBytes, &spotifyTok)
+			if err != nil {
+				log.Println("Error unmarshaling Spotify token:", err)
+				spotifyTok = nil
+			} else {
+				log.Println("Loaded Spotify token from creds successfully.")
+			}
+		} else {
+			log.Println("Error decoding Spotify token:", err)
+		}
+	}
+
+	if spotifyTok == nil || spotifyTok.AccessToken == "" {
+		log.Println("Stored Spotify token is invalid or missing.")
+		spotifyChan := make(chan *oauth2.Token)
+		go auth.SpotifyAuth(spotifyChan, common.ChatbotCreds["SpotifyClientID"], common.ChatbotCreds["SpotifyClientSecret"])
+		log.Println("Kicked off SpotifyAuth goroutine")
+		spotifyTok = <-spotifyChan
+		log.Println("Received token from SpotifyAuth module")
+		
+		// Marshal and encode
+		b, err := json.Marshal(spotifyTok)
+		if err == nil {
+			encodedStr := base64.StdEncoding.EncodeToString(b)
+			err = common.WriteNewValueToProperties(options.CredsFile, "SpotifyToken", encodedStr)
+			common.CheckErr(err, "main - Error writing new Spotify token to properties file")
+		} else {
+			log.Println("Error marshaling Spotify token:", err)
+		}
+	}
+
+	spotify_client.Initialize(common.ChatbotCreds["SpotifyClientID"], common.ChatbotCreds["SpotifyClientSecret"], spotifyTok)
+
 	go overlay.WebOverlay()
 	log.Println("Kicked off WebOverlay goroutine")
 	go overlay.DonorboxOverlay()
 	log.Println("Kicked off DonorboxOverlay goroutine")
+
+	// Local Console Input
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			text := scanner.Text()
+			// Simulate broadcaster input
+			badges := map[string]int{"broadcaster": 1}
+			chatbot.ProcessCommand(text, common.ChatbotCreds["TwitchUsername"], badges, nil)
+		}
+	}()
 
 	chatbot.Chatbot(twitchToken)
 }
