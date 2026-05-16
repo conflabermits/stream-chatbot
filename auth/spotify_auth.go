@@ -19,8 +19,12 @@ var (
 func SpotifyAuth(TokenChan chan *oauth2.Token, clientID string, clientSecret string) {
 	spotifyTokenChan = TokenChan
 
+	// NOTE: The Spotify Web API requires users to have an active Spotify Premium
+	// subscription to access playback features (like adding to queue, playing, pausing).
+	// NOTE: Spotify API blocks "http://localhost" as a valid redirect URI and typically
+	// requires HTTPS. However, it explicitly permits HTTP for loopback IPs like "http://127.0.0.1"
 	spotifyAuthApp = spotifyauth.New(
-		spotifyauth.WithRedirectURL("http://localhost:8081/callback"),
+		spotifyauth.WithRedirectURL("http://127.0.0.1:8081/callback"),
 		spotifyauth.WithScopes(
 			spotifyauth.ScopeUserReadPlaybackState,
 			spotifyauth.ScopeUserModifyPlaybackState,
@@ -37,7 +41,7 @@ func SpotifyAuth(TokenChan chan *oauth2.Token, clientID string, clientSecret str
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	})
 
-	log.Println("Started running Spotify auth on http://localhost:8081/")
+	log.Println("Started running Spotify auth on http://127.0.0.1:8081/")
 	url := spotifyAuthApp.AuthURL(spotifyState)
 	fmt.Println("Please log in to Spotify by visiting the following page in your browser:", url)
 	log.Println(http.ListenAndServe(":8081", mux))

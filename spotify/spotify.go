@@ -14,6 +14,9 @@ import (
 var client *spotify.Client
 var ctx = context.Background()
 
+// NOTE: Accessing the Spotify Player Web API (used by GetQueue, AddToQueue,
+// Pause, Play, Next) requires the user to have an active Spotify Premium subscription.
+// If a user without premium tries to use these endpoints, they will be blocked.
 func Initialize(clientID, clientSecret string, token *oauth2.Token) {
 	auth := spotifyauth.New(
 		spotifyauth.WithClientID(clientID),
