@@ -13,6 +13,8 @@ import (
 	"os/signal"
 	"sort"
 	"stream-chatbot/common"
+	"stream-chatbot/player"
+	overlay "stream-chatbot/web"
 	"strings"
 	"syscall"
 	"time"
@@ -429,6 +431,40 @@ func Chatbot(TwitchToken string) {
 				client.Say(message.Channel, "Attempting to create a poll for @"+message.User.DisplayName+"...")
 				pollText := strings.TrimPrefix(message.Message, "!poll ")
 				client.Say(message.Channel, sendPoll(pollText))
+			}
+		}
+
+		if strings.HasPrefix(message.Message, "!request ") {
+			log.Println("Detected !request message")
+			query := strings.TrimSpace(strings.TrimPrefix(message.Message, "!request "))
+			if query != "" {
+				client.Say(message.Channel, "Searching and checking track...")
+				go func() {
+					track, err := player.SearchTrack(query, message.User.DisplayName)
+					if err != nil {
+						client.Say(message.Channel, "Error: "+err.Error())
+						return
+					}
+					err = player.AddTrack(*track)
+					if err != nil {
+						client.Say(message.Channel, "Error adding track: "+err.Error())
+						return
+					}
+					overlay.BroadcastState()
+					client.Say(message.Channel, fmt.Sprintf("Added to queue: %s - %s", track.Artist, track.Title))
+				}()
+			}
+		}
+
+		if message.Message == "!skip" {
+			log.Println("Detected !skip message")
+			isMod := message.User.Badges["moderator"] == 1 || message.User.Badges["broadcaster"] == 1
+			if isMod {
+				player.SkipCurrent()
+				overlay.BroadcastState()
+				client.Say(message.Channel, "Current track skipped!")
+			} else {
+				client.Say(message.Channel, "You do not have permission to skip tracks.")
 			}
 		}
 	})

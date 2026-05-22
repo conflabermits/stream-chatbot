@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Music Player Overlay</title>
+    <link rel="stylesheet" href="/static/css/music.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="overlay-container hidden" id="overlay-container">
+        <!-- Now Playing Header -->
+        <div class="now-playing-panel">
+            <div class="music-icon">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+            <div class="track-info">
+                <h1 id="track-title">Loading...</h1>
+                <p id="track-artist">Connecting to stream chatbot</p>
+                <span class="requested-by" id="track-requester"></span>
+            </div>
+        </div>
+
+        <!-- Hidden Players Container -->
+        <div class="players-container">
+            <!-- YouTube Iframe API Container -->
+            <div id="yt-player-container" class="player-wrapper hidden">
+                <div id="yt-player"></div>
+            </div>
+            
+            <!-- Bandcamp Iframe Container -->
+            <div id="bandcamp-player-container" class="player-wrapper hidden">
+                <iframe id="bandcamp-player" style="border: 0; width: 100%; height: 42px;" src="" seamless></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- YouTube IFrame API Script -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Custom overlay logic -->
+    <script src="/static/js/music.js"></script>
+</body>
+</html>

@@ -4,3 +4,4 @@ TwitchUsername=bot_username
 TwitchChannel=streamer_channel
 BroadcasterID=123456789
 TwitchToken=0123456789abcdefghijklmnopqrst
+YouTubeAPIKey=YOUR_YOUTUBE_DATA_API_V3_KEY
