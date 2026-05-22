@@ -39,38 +39,84 @@ func initYoutube() error {
 }
 
 // SearchTrack determines the source and fetches the necessary metadata.
-func SearchTrack(query string, requestedBy string) (*Track, error) {
+func SearchTrack(query string, requestedBy string, preferredSource string) ([]Track, error) {
 	// Simple source detection
 	if strings.Contains(query, "bandcamp.com") {
 		return fetchBandcampMetadata(query, requestedBy)
+	}
+
+	if strings.Contains(query, "youtube.com") || strings.Contains(query, "youtu.be") {
+		return searchYouTube(query, requestedBy)
+	}
+
+	if preferredSource == "bandcamp" {
+		return searchBandcamp(query, requestedBy)
 	}
 
 	// Default to YouTube
 	return searchYouTube(query, requestedBy)
 }
 
-func searchYouTube(query string, requestedBy string) (*Track, error) {
+func searchBandcamp(query string, requestedBy string) ([]Track, error) {
+	searchURL := "https://bandcamp.com/search?q=" + url.QueryEscape(query)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(searchURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch bandcamp search: %v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	html := string(bodyBytes)
+
+	// Regex to find track URLs from search results
+	re := regexp.MustCompile(`href="(https://[^"]+\.bandcamp\.com/track/[^"?]+)[^"]*"`)
+	matches := re.FindAllStringSubmatch(html, -1)
+
+	var tracks []Track
+	seen := make(map[string]bool)
+	for _, m := range matches {
+		if len(tracks) >= 3 {
+			break
+		}
+		trackURL := m[1]
+		if !seen[trackURL] {
+			seen[trackURL] = true
+			trackList, err := fetchBandcampMetadata(trackURL, requestedBy)
+			if err == nil && len(trackList) > 0 {
+				tracks = append(tracks, trackList[0])
+			}
+		}
+	}
+
+	if len(tracks) == 0 {
+		return nil, errors.New("no bandcamp results found")
+	}
+	return tracks, nil
+}
+
+func searchYouTube(query string, requestedBy string) ([]Track, error) {
 	err := initYoutube()
 	if err != nil {
 		return nil, fmt.Errorf("youtube api not initialized: %v", err)
 	}
 
-	videoID := ""
+	var videoIDs []string
 	// Check if query is a youtube URL
 	if strings.Contains(query, "youtube.com") || strings.Contains(query, "youtu.be") {
 		u, err := url.Parse(query)
 		if err == nil {
 			if strings.Contains(query, "youtu.be") {
-				videoID = strings.TrimPrefix(u.Path, "/")
+				videoIDs = append(videoIDs, strings.TrimPrefix(u.Path, "/"))
 			} else {
-				videoID = u.Query().Get("v")
+				videoIDs = append(videoIDs, u.Query().Get("v"))
 			}
 		}
 	}
 
-	if videoID == "" {
+	if len(videoIDs) == 0 || videoIDs[0] == "" {
 		// Perform a search
-		call := ytService.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(1).Type("video")
+		call := ytService.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(3).Type("video")
 		response, err := call.Do()
 		if err != nil {
 			return nil, fmt.Errorf("error searching youtube: %v", err)
@@ -78,11 +124,13 @@ func searchYouTube(query string, requestedBy string) (*Track, error) {
 		if len(response.Items) == 0 {
 			return nil, errors.New("no youtube results found")
 		}
-		videoID = response.Items[0].Id.VideoId
+		for _, item := range response.Items {
+			videoIDs = append(videoIDs, item.Id.VideoId)
+		}
 	}
 
 	// Fetch duration and full details
-	videosCall := ytService.Videos.List([]string{"snippet", "contentDetails"}).Id(videoID)
+	videosCall := ytService.Videos.List([]string{"snippet", "contentDetails"}).Id(strings.Join(videoIDs, ","))
 	videosResponse, err := videosCall.Do()
 	if err != nil {
 		return nil, fmt.Errorf("error fetching video details: %v", err)
@@ -91,24 +139,28 @@ func searchYouTube(query string, requestedBy string) (*Track, error) {
 		return nil, errors.New("youtube video not found")
 	}
 
-	item := videosResponse.Items[0]
-	durationStr := item.ContentDetails.Duration
-	durationSeconds := parseISO8601Duration(durationStr)
+	var tracks []Track
+	for _, item := range videosResponse.Items {
+		durationStr := item.ContentDetails.Duration
+		durationSeconds := parseISO8601Duration(durationStr)
 
-	thumbnail := ""
-	if item.Snippet.Thumbnails != nil && item.Snippet.Thumbnails.Default != nil {
-		thumbnail = item.Snippet.Thumbnails.Default.Url
+		thumbnail := ""
+		if item.Snippet.Thumbnails != nil && item.Snippet.Thumbnails.Default != nil {
+			thumbnail = item.Snippet.Thumbnails.Default.Url
+		}
+
+		tracks = append(tracks, Track{
+			ID:          item.Id,
+			Title:       item.Snippet.Title,
+			Artist:      item.Snippet.ChannelTitle,
+			Source:      "youtube",
+			Duration:    durationSeconds,
+			RequestedBy: requestedBy,
+			Thumbnail:   thumbnail,
+		})
 	}
 
-	return &Track{
-		ID:          videoID,
-		Title:       item.Snippet.Title,
-		Artist:      item.Snippet.ChannelTitle,
-		Source:      "youtube",
-		Duration:    durationSeconds,
-		RequestedBy: requestedBy,
-		Thumbnail:   thumbnail,
-	}, nil
+	return tracks, nil
 }
 
 func parseISO8601Duration(duration string) int {
@@ -126,7 +178,7 @@ func parseISO8601Duration(duration string) int {
 	return hours*3600 + minutes*60 + seconds
 }
 
-func fetchBandcampMetadata(pageURL string, requestedBy string) (*Track, error) {
+func fetchBandcampMetadata(pageURL string, requestedBy string) ([]Track, error) {
 	// Ensure URL has http scheme
 	if !strings.HasPrefix(pageURL, "http") {
 		pageURL = "https://" + pageURL
@@ -214,7 +266,7 @@ func fetchBandcampMetadata(pageURL string, requestedBy string) (*Track, error) {
 		return nil, errors.New("could not determine track duration from bandcamp page")
 	}
 
-	return &Track{
+	return []Track{{
 		ID:          pageURL,
 		Title:       title,
 		Artist:      artist,
@@ -222,5 +274,5 @@ func fetchBandcampMetadata(pageURL string, requestedBy string) (*Track, error) {
 		Duration:    duration,
 		RequestedBy: requestedBy,
 		BandcampURL: embedURL,
-	}, nil
+	}}, nil
 }

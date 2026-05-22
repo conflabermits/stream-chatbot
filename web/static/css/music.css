@@ -114,6 +114,10 @@ body {
 .player-wrapper {
     border-radius: 8px;
     overflow: hidden;
+    border: 2px dashed var(--primary-color);
+    background: rgba(6, 135, 245, 0.1);
+    margin-top: 8px;
+    min-height: 42px;
 }
 
 #yt-player {
