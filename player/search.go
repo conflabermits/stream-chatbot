@@ -1,7 +1,9 @@
 package player
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -57,34 +59,73 @@ func SearchTrack(query string, requestedBy string, preferredSource string) ([]Tr
 	return searchYouTube(query, requestedBy)
 }
 
+type bcSearchPayload struct {
+	SearchText   string `json:"search_text"`
+	SearchFilter string `json:"search_filter"`
+	FullPage     bool   `json:"full_page"`
+}
+
+type bcSearchResponse struct {
+	Auto struct {
+		Results []struct {
+			Type        string `json:"type"`
+			ItemUrlPath string `json:"item_url_path"`
+		} `json:"results"`
+	} `json:"auto"`
+}
+
 func searchBandcamp(query string, requestedBy string) ([]Track, error) {
-	searchURL := "https://bandcamp.com/search?q=" + url.QueryEscape(query)
+	apiURL := "https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic"
+	
+	payload := bcSearchPayload{
+		SearchText:   query,
+		SearchFilter: "t", // 't' for tracks
+		FullPage:     false,
+	}
+	
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal bandcamp payload: %v", err)
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create bandcamp request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(searchURL)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch bandcamp search: %v", err)
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	html := string(bodyBytes)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bandcamp api returned status %d", resp.StatusCode)
+	}
 
-	// Regex to find track URLs from search results
-	re := regexp.MustCompile(`href="(https://[^"]+\.bandcamp\.com/track/[^"?]+)[^"]*"`)
-	matches := re.FindAllStringSubmatch(html, -1)
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	
+	var searchResp bcSearchResponse
+	if err := json.Unmarshal(bodyBytes, &searchResp); err != nil {
+		return nil, fmt.Errorf("failed to decode bandcamp response: %v", err)
+	}
 
 	var tracks []Track
 	seen := make(map[string]bool)
-	for _, m := range matches {
+	for _, result := range searchResp.Auto.Results {
 		if len(tracks) >= 3 {
 			break
 		}
-		trackURL := m[1]
-		if !seen[trackURL] {
-			seen[trackURL] = true
-			trackList, err := fetchBandcampMetadata(trackURL, requestedBy)
-			if err == nil && len(trackList) > 0 {
-				tracks = append(tracks, trackList[0])
+		if result.Type == "t" && result.ItemUrlPath != "" {
+			trackURL := result.ItemUrlPath
+			if !seen[trackURL] {
+				seen[trackURL] = true
+				trackList, err := fetchBandcampMetadata(trackURL, requestedBy)
+				if err == nil && len(trackList) > 0 {
+					tracks = append(tracks, trackList[0])
+				}
 			}
 		}
 	}

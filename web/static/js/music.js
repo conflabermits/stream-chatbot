@@ -67,7 +67,9 @@ function handleStateUpdate(state) {
 
     if (!track) {
         // Nothing playing
-        container.classList.add('hidden');
+        document.getElementById('track-title').innerText = "Waiting for requests...";
+        document.getElementById('track-artist').innerText = "The queue is empty.";
+        document.getElementById('track-requester').innerText = "";
         stopAllActivePlayers();
         currentTrackId = null;
         return;
@@ -90,11 +92,9 @@ function stopAllActivePlayers() {
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
         ytPlayer.stopVideo();
     }
-    document.getElementById('yt-player-container').classList.add('hidden');
 
     const bcPlayer = document.getElementById('bandcamp-player');
     bcPlayer.src = "";
-    document.getElementById('bandcamp-player-container').classList.add('hidden');
     
     if (bandcampTimer) {
         clearTimeout(bandcampTimer);
@@ -106,13 +106,11 @@ function playTrack(track) {
     stopAllActivePlayers();
 
     if (track.source === 'youtube') {
-        document.getElementById('yt-player-container').classList.remove('hidden');
         if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
             ytPlayer.loadVideoById(track.id);
             ytPlayer.playVideo();
         }
     } else if (track.source === 'bandcamp') {
-        document.getElementById('bandcamp-player-container').classList.remove('hidden');
         const bcPlayer = document.getElementById('bandcamp-player');
         bcPlayer.src = track.bandcamp_url;
         

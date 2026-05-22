@@ -15,6 +15,7 @@ import (
 	"stream-chatbot/common"
 	"stream-chatbot/player"
 	overlay "stream-chatbot/web"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -25,6 +26,7 @@ import (
 )
 
 var twitchToken string
+var userLastSearch = make(map[string][]player.Track)
 
 type PollPostData struct {
 	BroadcasterId              string           `json:"broadcaster_id"`
@@ -449,10 +451,34 @@ func Chatbot(TwitchToken string) {
 			case "add", "search":
 				query := strings.Join(args[1:], " ")
 				if query == "" {
-					client.Say(message.Channel, "Usage: !request "+subCommand+" <song/link>")
+					msg := "Usage: !request " + subCommand + " <song/link or number>"
+					log.Printf("[!request %s] Response: %s\n", subCommand, msg)
+					client.Say(message.Channel, msg)
 					return
 				}
 				
+				// Check if query is just a number for a past search
+				if subCommand == "add" {
+					if idx, err := strconv.Atoi(query); err == nil {
+						lastTracks, ok := userLastSearch[message.User.DisplayName]
+						if ok && idx >= 1 && idx <= len(lastTracks) {
+							track := lastTracks[idx-1]
+							err = player.AddTrack(track, isMod)
+							if err != nil {
+								msg := "Error adding track: " + err.Error()
+								log.Printf("[!request add] Response: %s\n", msg)
+								client.Say(message.Channel, msg)
+								return
+							}
+							overlay.BroadcastState()
+							msg := fmt.Sprintf("Added to queue: %s - %s", track.Artist, track.Title)
+							log.Printf("[!request add] Success: %s\n", msg)
+							client.Say(message.Channel, msg)
+							return
+						}
+					}
+				}
+
 				preferredSource := ""
 				queryLower := strings.ToLower(query)
 				if strings.Contains(queryLower, "bc") || strings.Contains(queryLower, "bandcamp") {
@@ -461,29 +487,46 @@ func Chatbot(TwitchToken string) {
 					preferredSource = "youtube"
 				}
 
-				client.Say(message.Channel, "Searching...")
+				log.Printf("[!request %s] Searching for '%s' (pref: %s)\n", subCommand, query, preferredSource)
+				
 				go func() {
 					tracks, err := player.SearchTrack(query, message.User.DisplayName, preferredSource)
 					if err != nil || len(tracks) == 0 {
-						client.Say(message.Channel, "Error or no results: "+err.Error())
+						msg := "Error or no results: "
+						if err != nil {
+							msg += err.Error()
+						} else {
+							msg += "none found"
+						}
+						log.Printf("[!request %s] Response: %s\n", subCommand, msg)
+						client.Say(message.Channel, msg)
 						return
 					}
+					
+					// Store for future add
+					userLastSearch[message.User.DisplayName] = tracks
 					
 					if subCommand == "search" {
 						var results []string
 						for i, t := range tracks {
 							results = append(results, fmt.Sprintf("%d. %s - %s", i+1, t.Artist, t.Title))
 						}
-						client.Say(message.Channel, "Top results: " + strings.Join(results, " | "))
+						msg := "Top results: " + strings.Join(results, " | ") + " (Type !request add 1 to queue)"
+						log.Printf("[!request search] Success: %s\n", msg)
+						client.Say(message.Channel, msg)
 					} else { // add
 						track := tracks[0]
 						err = player.AddTrack(track, isMod)
 						if err != nil {
-							client.Say(message.Channel, "Error adding track: "+err.Error())
+							msg := "Error adding track: " + err.Error()
+							log.Printf("[!request add] Response: %s\n", msg)
+							client.Say(message.Channel, msg)
 							return
 						}
 						overlay.BroadcastState()
-						client.Say(message.Channel, fmt.Sprintf("Added to queue: %s - %s", track.Artist, track.Title))
+						msg := fmt.Sprintf("Added to queue: %s - %s", track.Artist, track.Title)
+						log.Printf("[!request add] Success: %s\n", msg)
+						client.Say(message.Channel, msg)
 					}
 				}()
 
@@ -491,25 +534,35 @@ func Chatbot(TwitchToken string) {
 				query := strings.Join(args[1:], " ")
 				removedTitle, err := player.RemoveTrack(query, isMod, message.User.DisplayName)
 				if err != nil {
-					client.Say(message.Channel, "Error removing track: "+err.Error())
+					msg := "Error removing track: " + err.Error()
+					log.Printf("[!request remove] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				} else {
 					overlay.BroadcastState()
-					client.Say(message.Channel, "Removed track: " + removedTitle)
+					msg := "Removed track: " + removedTitle
+					log.Printf("[!request remove] Success: %s\n", msg)
+					client.Say(message.Channel, msg)
 				}
 
 			case "skip", "done":
 				if isMod {
 					player.SkipCurrent()
 					overlay.BroadcastState()
-					client.Say(message.Channel, "Current track skipped!")
+					msg := "Current track skipped!"
+					log.Printf("[!request %s] Success: %s\n", subCommand, msg)
+					client.Say(message.Channel, msg)
 				} else {
-					client.Say(message.Channel, "You do not have permission to skip tracks.")
+					msg := "You do not have permission to skip tracks."
+					log.Printf("[!request %s] Response: %s\n", subCommand, msg)
+					client.Say(message.Channel, msg)
 				}
 				
 			case "queue":
 				q := player.GetQueue()
 				if len(q) == 0 {
-					client.Say(message.Channel, "The queue is currently empty.")
+					msg := "The queue is currently empty."
+					log.Printf("[!request queue] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				} else {
 					var upNext []string
 					for i, t := range q {
@@ -518,32 +571,46 @@ func Chatbot(TwitchToken string) {
 						}
 						upNext = append(upNext, fmt.Sprintf("%d. %s - %s", i+1, t.Artist, t.Title))
 					}
-					client.Say(message.Channel, "Up next: " + strings.Join(upNext, " | "))
+					msg := "Up next: " + strings.Join(upNext, " | ")
+					log.Printf("[!request queue] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				}
 				
 			case "info":
 				t := player.GetCurrentTrack()
 				if t == nil {
-					client.Say(message.Channel, "No track is currently playing.")
+					msg := "No track is currently playing."
+					log.Printf("[!request info] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				} else {
 					duration := fmt.Sprintf("%02d:%02d", t.Duration/60, t.Duration%60)
-					client.Say(message.Channel, fmt.Sprintf("Currently playing: %s - %s [%s] (Requested by: %s)", t.Artist, t.Title, duration, t.RequestedBy))
+					msg := fmt.Sprintf("Currently playing: %s - %s [%s] (Requested by: %s)", t.Artist, t.Title, duration, t.RequestedBy)
+					log.Printf("[!request info] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				}
 				
 			case "limit":
 				if isMod {
 					enabled := player.ToggleRateLimit()
 					if enabled {
-						client.Say(message.Channel, "Rate limiting is now ENABLED (2 songs / 10 mins).")
+						msg := "Rate limiting is now ENABLED (2 songs / 10 mins)."
+						log.Printf("[!request limit] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
 					} else {
-						client.Say(message.Channel, "Rate limiting is now DISABLED.")
+						msg := "Rate limiting is now DISABLED."
+						log.Printf("[!request limit] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
 					}
 				} else {
-					client.Say(message.Channel, "You do not have permission to toggle the rate limit.")
+					msg := "You do not have permission to toggle the rate limit."
+					log.Printf("[!request limit] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
 				}
 
 			default:
-				client.Say(message.Channel, "Unknown subcommand. Usage: !request <add|search|remove|skip|done|queue|info|limit>")
+				msg := "Unknown subcommand. Usage: !request <add|search|remove|skip|done|queue|info|limit>"
+				log.Printf("[!request] Response: %s\n", msg)
+				client.Say(message.Channel, msg)
 			}
 		}
 	})
