@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -76,6 +78,7 @@ type bcSearchResponse struct {
 
 func searchBandcamp(query string, requestedBy string) ([]Track, error) {
 	apiURL := "https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic"
+	log.Printf("[Bandcamp API] Searching for query: %s\n", query)
 	
 	payload := bcSearchPayload{
 		SearchText:   query,
@@ -85,11 +88,13 @@ func searchBandcamp(query string, requestedBy string) ([]Track, error) {
 	
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
+		log.Printf("[Bandcamp API] Marshal error: %v\n", err)
 		return nil, fmt.Errorf("failed to marshal bandcamp payload: %v", err)
 	}
 
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
+		log.Printf("[Bandcamp API] Request creation error: %v\n", err)
 		return nil, fmt.Errorf("failed to create bandcamp request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -97,11 +102,13 @@ func searchBandcamp(query string, requestedBy string) ([]Track, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Printf("[Bandcamp API] HTTP error: %v\n", err)
 		return nil, fmt.Errorf("failed to fetch bandcamp search: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("[Bandcamp API] Bad status code: %d\n", resp.StatusCode)
 		return nil, fmt.Errorf("bandcamp api returned status %d", resp.StatusCode)
 	}
 
@@ -109,6 +116,7 @@ func searchBandcamp(query string, requestedBy string) ([]Track, error) {
 	
 	var searchResp bcSearchResponse
 	if err := json.Unmarshal(bodyBytes, &searchResp); err != nil {
+		log.Printf("[Bandcamp API] Unmarshal error: %v\n", err)
 		return nil, fmt.Errorf("failed to decode bandcamp response: %v", err)
 	}
 
@@ -131,6 +139,7 @@ func searchBandcamp(query string, requestedBy string) ([]Track, error) {
 	}
 
 	if len(tracks) == 0 {
+		log.Printf("[Bandcamp API] No tracks found for query: %s\n", query)
 		return nil, errors.New("no bandcamp results found")
 	}
 	return tracks, nil
@@ -143,6 +152,8 @@ func searchYouTube(query string, requestedBy string) ([]Track, error) {
 	}
 
 	var videoIDs []string
+	log.Printf("[YouTube API] Searching for query: %s\n", query)
+
 	// Check if query is a youtube URL
 	if strings.Contains(query, "youtube.com") || strings.Contains(query, "youtu.be") {
 		u, err := url.Parse(query)
@@ -160,9 +171,11 @@ func searchYouTube(query string, requestedBy string) ([]Track, error) {
 		call := ytService.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(3).Type("video")
 		response, err := call.Do()
 		if err != nil {
+			log.Printf("[YouTube API] Search error: %v\n", err)
 			return nil, fmt.Errorf("error searching youtube: %v", err)
 		}
 		if len(response.Items) == 0 {
+			log.Printf("[YouTube API] No results found for query: %s\n", query)
 			return nil, errors.New("no youtube results found")
 		}
 		for _, item := range response.Items {
@@ -174,9 +187,11 @@ func searchYouTube(query string, requestedBy string) ([]Track, error) {
 	videosCall := ytService.Videos.List([]string{"snippet", "contentDetails"}).Id(strings.Join(videoIDs, ","))
 	videosResponse, err := videosCall.Do()
 	if err != nil {
+		log.Printf("[YouTube API] Videos List error: %v\n", err)
 		return nil, fmt.Errorf("error fetching video details: %v", err)
 	}
 	if len(videosResponse.Items) == 0 {
+		log.Printf("[YouTube API] Videos not found for IDs: %v\n", videoIDs)
 		return nil, errors.New("youtube video not found")
 	}
 
@@ -224,88 +239,81 @@ func fetchBandcampMetadata(pageURL string, requestedBy string) ([]Track, error) 
 	if !strings.HasPrefix(pageURL, "http") {
 		pageURL = "https://" + pageURL
 	}
+	log.Printf("[Bandcamp Scrape] Fetching URL: %s\n", pageURL)
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(pageURL)
 	if err != nil {
+		log.Printf("[Bandcamp Scrape] HTTP error: %v\n", err)
 		return nil, fmt.Errorf("failed to fetch bandcamp page: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("[Bandcamp Scrape] Bad status code: %d\n", resp.StatusCode)
 		return nil, fmt.Errorf("bandcamp returned status %d", resp.StatusCode)
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[Bandcamp Scrape] ReadBody error: %v\n", err)
 		return nil, err
 	}
-	html := string(bodyBytes)
+	pageHTML := string(bodyBytes)
 
 	// Extract Title
 	title := "Unknown Bandcamp Track"
 	titleRe := regexp.MustCompile(`<meta property="og:title" content="([^"]+)">`)
-	if m := titleRe.FindStringSubmatch(html); len(m) > 1 {
+	if m := titleRe.FindStringSubmatch(pageHTML); len(m) > 1 {
 		title = m[1]
 	}
 
-	// Extract Artist (usually from the site name or part of the title)
+	// Extract Artist
 	artist := "Bandcamp Artist"
 	artistRe := regexp.MustCompile(`<meta property="og:site_name" content="([^"]+)">`)
-	if m := artistRe.FindStringSubmatch(html); len(m) > 1 {
+	if m := artistRe.FindStringSubmatch(pageHTML); len(m) > 1 {
 		artist = m[1]
 	}
 
-	// Extract Embed URL to get Album/Track IDs
 	embedURL := ""
-	embedRe := regexp.MustCompile(`<meta property="og:video" content="([^"]+)">`)
-	if m := embedRe.FindStringSubmatch(html); len(m) > 1 {
-		embedURL = m[1]
-	} else {
-		// Fallback for getting embed URL params from trkinfo
-		albumRe := regexp.MustCompile(`"album_id":(\d+)`)
-		trackRe := regexp.MustCompile(`"track_id":(\d+)`)
-		albumMatch := albumRe.FindStringSubmatch(html)
-		trackMatch := trackRe.FindStringSubmatch(html)
+	duration := 0
+
+	// Use data-tralbum robust extraction
+	tralbumRe := regexp.MustCompile(`data-tralbum="([^"]+)"`)
+	if m := tralbumRe.FindStringSubmatch(pageHTML); len(m) > 1 {
+		decodedJSON := html.UnescapeString(m[1])
 		
+		albumRe := regexp.MustCompile(`"album_id":\s*(\d+)`)
+		trackRe := regexp.MustCompile(`"track_id":\s*(\d+)`)
+		durationRe := regexp.MustCompile(`"duration":\s*([0-9.]+)`)
+		
+		albumMatch := albumRe.FindStringSubmatch(decodedJSON)
+		trackMatch := trackRe.FindStringSubmatch(decodedJSON)
+		durationMatch := durationRe.FindStringSubmatch(decodedJSON)
+
 		if len(albumMatch) > 1 && len(trackMatch) > 1 {
 			embedURL = fmt.Sprintf("https://bandcamp.com/EmbeddedPlayer/album=%s/track=%s/size=small/transparent=true/", albumMatch[1], trackMatch[1])
-		} else {
-			return nil, errors.New("could not find bandcamp track or album id")
 		}
-	}
-
-	// Make sure embed uses a standard simple layout
-	if strings.Contains(embedURL, "size=large") {
-		embedURL = strings.ReplaceAll(embedURL, "size=large", "size=small")
-	}
-	if !strings.Contains(embedURL, "transparent=true") {
-		embedURL += "transparent=true/"
-	}
-
-	// Extract Duration (TrkInfo or ItemData)
-	duration := 0
-	durationRe := regexp.MustCompile(`"duration":([0-9.]+)`)
-	if m := durationRe.FindStringSubmatch(html); len(m) > 1 {
-		d, err := strconv.ParseFloat(m[1], 64)
-		if err == nil {
-			duration = int(d)
-		}
-	}
-
-	if duration == 0 {
-		// Look for video:duration meta
-		metaDurRe := regexp.MustCompile(`<meta property="video:duration" content="(\d+)">`)
-		if m := metaDurRe.FindStringSubmatch(html); len(m) > 1 {
-			if d, err := strconv.Atoi(m[1]); err == nil {
-				duration = d
+		
+		if len(durationMatch) > 1 {
+			d, err := strconv.ParseFloat(durationMatch[1], 64)
+			if err == nil {
+				duration = int(d)
 			}
 		}
 	}
 
+	if embedURL == "" {
+		log.Printf("[Bandcamp Scrape] Could not find track/album id for URL: %s\n", pageURL)
+		return nil, errors.New("could not find bandcamp track or album id")
+	}
+
 	if duration == 0 {
+		log.Printf("[Bandcamp Scrape] Could not find duration for URL: %s\n", pageURL)
 		return nil, errors.New("could not determine track duration from bandcamp page")
 	}
+
+	log.Printf("[Bandcamp Scrape] Success: %s - %s (%d sec)\n", artist, title, duration)
 
 	return []Track{{
 		ID:          pageURL,

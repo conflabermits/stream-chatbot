@@ -2,6 +2,7 @@ let ws;
 let currentTrackId = null;
 let ytPlayer = null;
 let bandcampTimer = null;
+let lastPausedState = false;
 
 // Initialize YouTube IFrame API
 function onYouTubeIframeAPIReady() {
@@ -63,21 +64,38 @@ function connectWebSocket() {
 
 function handleStateUpdate(state) {
     const track = state.current_track;
+    const upNext = state.up_next;
+    const isPaused = state.is_paused;
     const container = document.getElementById('overlay-container');
+    const musicIcon = document.querySelector('.music-icon');
 
     if (!track) {
-        // Nothing playing
-        document.getElementById('track-title').innerText = "Waiting for requests...";
-        document.getElementById('track-artist').innerText = "The queue is empty.";
-        document.getElementById('track-requester').innerText = "";
+        // Nothing actively playing — show "Up Next" or idle message
         stopAllActivePlayers();
         currentTrackId = null;
+        lastPausedState = false;
+
+        if (upNext) {
+            // Show "Up Next" screen
+            document.getElementById('track-title').innerText = "Up Next: " + upNext.title;
+            document.getElementById('track-artist').innerText = upNext.artist;
+            document.getElementById('track-requester').innerText = "Requested by " + upNext.requested_by;
+            musicIcon.classList.add('paused');
+        } else {
+            document.getElementById('track-title').innerText = "Waiting for requests...";
+            document.getElementById('track-artist').innerText = "The queue is empty.";
+            document.getElementById('track-requester').innerText = "";
+            musicIcon.classList.add('paused');
+        }
         return;
     }
 
+    // A track is active
     if (currentTrackId !== track.id) {
+        // New track started
         currentTrackId = track.id;
-        
+        lastPausedState = false;
+
         // Update UI
         document.getElementById('track-title').innerText = track.title;
         document.getElementById('track-artist').innerText = track.artist;
@@ -85,6 +103,25 @@ function handleStateUpdate(state) {
         container.classList.remove('hidden');
 
         playTrack(track);
+    }
+
+    // Handle pause/resume state changes for YouTube
+    if (isPaused !== lastPausedState) {
+        lastPausedState = isPaused;
+        if (track.source === 'youtube' && ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+            if (isPaused) {
+                ytPlayer.pauseVideo();
+            } else {
+                ytPlayer.playVideo();
+            }
+        }
+    }
+
+    // Update music icon animation based on pause state
+    if (isPaused) {
+        musicIcon.classList.add('paused');
+    } else {
+        musicIcon.classList.remove('paused');
     }
 }
 

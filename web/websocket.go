@@ -23,6 +23,22 @@ type WsMessage struct {
 type TrackState struct {
 	CurrentTrack *player.Track  `json:"current_track"`
 	Queue        []player.Track `json:"queue"`
+	UpNext       *player.Track  `json:"up_next"`
+	IsPaused     bool           `json:"is_paused"`
+}
+
+func getTrackState() TrackState {
+	q := player.GetQueue()
+	var upNext *player.Track
+	if len(q) > 0 {
+		upNext = &q[0]
+	}
+	return TrackState{
+		CurrentTrack: player.GetCurrentTrack(),
+		Queue:        q,
+		UpNext:       upNext,
+		IsPaused:     player.GetIsPaused(),
+	}
 }
 
 var clients = make(map[*websocket.Conn]bool)
@@ -54,18 +70,15 @@ func handleMusicWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg.Event == "TRACK_ENDED" {
-			log.Println("Received TRACK_ENDED from overlay, popping next track...")
-			player.PopNext()
+			log.Println("Received TRACK_ENDED from overlay, waiting for !request play...")
+			player.ClearCurrent()
 			BroadcastState()
 		}
 	}
 }
 
 func sendStateToClient(ws *websocket.Conn) {
-	state := TrackState{
-		CurrentTrack: player.GetCurrentTrack(),
-		Queue:        player.GetQueue(),
-	}
+	state := getTrackState()
 	msg := WsMessage{
 		Event: "STATE_UPDATE",
 		Data:  state,
@@ -75,10 +88,7 @@ func sendStateToClient(ws *websocket.Conn) {
 
 // BroadcastState sends the current track and queue to all connected overlay clients.
 func BroadcastState() {
-	state := TrackState{
-		CurrentTrack: player.GetCurrentTrack(),
-		Queue:        player.GetQueue(),
-	}
+	state := getTrackState()
 	msg := WsMessage{
 		Event: "STATE_UPDATE",
 		Data:  state,

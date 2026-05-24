@@ -24,6 +24,7 @@ var (
 	queue        []Track
 	currentTrack *Track
 	queueMutex   sync.Mutex
+	IsPaused     bool
 
 	// Rate limiting maps
 	userRequests   = make(map[string][]time.Time)
@@ -74,11 +75,6 @@ func AddTrack(track Track, isMod bool) error {
 	defer queueMutex.Unlock()
 
 	queue = append(queue, track)
-	
-	// If nothing is playing, pop the next track immediately
-	if currentTrack == nil {
-		popNextInternal()
-	}
 
 	return nil
 }
@@ -87,6 +83,7 @@ func AddTrack(track Track, isMod bool) error {
 func PopNext() *Track {
 	queueMutex.Lock()
 	defer queueMutex.Unlock()
+	IsPaused = false
 	return popNextInternal()
 }
 
@@ -103,9 +100,67 @@ func popNextInternal() *Track {
 	return currentTrack
 }
 
-// SkipCurrent immediately skips the current track and pops the next.
-func SkipCurrent() *Track {
-	return PopNext()
+// ClearCurrent stops the currently playing track and leaves the player waiting.
+func ClearCurrent() {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+	currentTrack = nil
+	IsPaused = false
+}
+
+// PlayOrResume resumes playback if paused, or pops next track if stopped.
+func PlayOrResume() error {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+
+	if currentTrack != nil {
+		if IsPaused {
+			IsPaused = false
+			return nil
+		}
+		return errors.New("track is already playing")
+	}
+
+	if len(queue) == 0 {
+		return errors.New("queue is empty")
+	}
+
+	IsPaused = false
+	popNextInternal()
+	return nil
+}
+
+// Pause pauses the current track (if YouTube).
+func Pause() error {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+
+	if currentTrack == nil {
+		return errors.New("nothing is playing")
+	}
+	
+	if currentTrack.Source == "bandcamp" {
+		return errors.New("Bandcamp tracks cannot be paused dynamically. Only YouTube tracks can be paused")
+	}
+
+	if IsPaused {
+		return errors.New("already paused")
+	}
+
+	IsPaused = true
+	return nil
+}
+
+// GetIsPaused returns whether the player is paused
+func GetIsPaused() bool {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+	return IsPaused
+}
+
+// SkipCurrent immediately stops the current track.
+func SkipCurrent() {
+	ClearCurrent()
 }
 
 // GetQueue returns a copy of the current queue.

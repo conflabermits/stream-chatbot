@@ -440,7 +440,7 @@ func Chatbot(TwitchToken string) {
 			log.Println("Detected !request message")
 			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!request ")))
 			if len(args) == 0 {
-				client.Say(message.Channel, "Usage: !request <add|search|remove|skip|done|queue|info|limit>")
+				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>")
 				return
 			}
 			
@@ -455,6 +455,11 @@ func Chatbot(TwitchToken string) {
 					log.Printf("[!request %s] Response: %s\n", subCommand, msg)
 					client.Say(message.Channel, msg)
 					return
+				}
+
+				// Sanitize Bandcamp direct URLs: strip leading "bc " prefix
+				if strings.HasPrefix(strings.ToLower(query), "bc http") {
+					query = strings.TrimSpace(query[2:])
 				}
 				
 				// Check if query is just a number for a past search
@@ -544,6 +549,63 @@ func Chatbot(TwitchToken string) {
 					client.Say(message.Channel, msg)
 				}
 
+			case "play":
+				if isMod {
+					err := player.PlayOrResume()
+					if err != nil {
+						msg := "Play error: " + err.Error()
+						log.Printf("[!request play] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					} else {
+						overlay.BroadcastState()
+						msg := "Playing!"
+						log.Printf("[!request play] Success: %s\n", msg)
+						client.Say(message.Channel, msg)
+					}
+				} else {
+					msg := "You do not have permission to control playback."
+					log.Printf("[!request play] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
+				}
+
+			case "pause":
+				if isMod {
+					err := player.Pause()
+					if err != nil {
+						msg := "Pause error: " + err.Error()
+						log.Printf("[!request pause] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					} else {
+						overlay.BroadcastState()
+						msg := "Paused."
+						log.Printf("[!request pause] Success: %s\n", msg)
+						client.Say(message.Channel, msg)
+					}
+				} else {
+					msg := "You do not have permission to control playback."
+					log.Printf("[!request pause] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
+				}
+
+			case "resume":
+				if isMod {
+					err := player.PlayOrResume()
+					if err != nil {
+						msg := "Resume error: " + err.Error()
+						log.Printf("[!request resume] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					} else {
+						overlay.BroadcastState()
+						msg := "Resumed!"
+						log.Printf("[!request resume] Success: %s\n", msg)
+						client.Say(message.Channel, msg)
+					}
+				} else {
+					msg := "You do not have permission to control playback."
+					log.Printf("[!request resume] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
+				}
+
 			case "skip", "done":
 				if isMod {
 					player.SkipCurrent()
@@ -608,7 +670,7 @@ func Chatbot(TwitchToken string) {
 				}
 
 			default:
-				msg := "Unknown subcommand. Usage: !request <add|search|remove|skip|done|queue|info|limit>"
+				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>"
 				log.Printf("[!request] Response: %s\n", msg)
 				client.Say(message.Channel, msg)
 			}

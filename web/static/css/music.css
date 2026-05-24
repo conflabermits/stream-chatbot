@@ -135,6 +135,12 @@ body {
     }
 }
 
+/* Pause the EQ animation when not actively playing */
+.music-icon.paused .bar {
+    animation: none;
+    height: 30%;
+}
+
 @keyframes bounce {
     0%, 100% { height: 30%; }
     50% { height: 100%; }
