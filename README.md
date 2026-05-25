@@ -19,7 +19,7 @@ A Go-powered Twitch chatbot with a music request system and OBS browser overlay.
 4. The overlay connects via WebSocket and receives real-time state updates (current track, queue, pause state)
 5. The YouTube IFrame API plays audio in the browser source — OBS captures the audio output
 
-### Chat Commands
+### Music Request Commands
 
 All music commands use the `!request` prefix:
 
@@ -37,13 +37,33 @@ All music commands use the `!request` prefix:
 | `!request skip` / `done` | Mods | Skip the current track |
 | `!request limit` | Mods | Toggle rate limiting on/off |
 
-### OBS Overlay Setup
+### General Chat Commands
+
+| Command | Who | Description |
+|---------|-----|-------------|
+| `!hello` / `!hellobot` | Everyone | Greets the user |
+| `!bye` / `!byebot` | Everyone | Says goodbye to the user |
+| `!quote` / `!randomquote` | Everyone | Displays a random Zen quote with a twist |
+| `!abc <message>` / `!alpha <message>` | Everyone | Alphabetizes the words in your message |
+| `!poll` / `!getPoll` | Everyone | Shows the results of the currently active Twitch poll |
+| `!poll <question> // <choice 1> // <choice 2>` | Everyone | Creates a new Twitch poll with channel points voting (max 6 choices) |
+
+### Music OBS Overlay Setup
 
 1. Add a **Browser Source** in OBS
 2. Set the URL to `http://localhost:38080/music`
 3. Set the dimensions to **490 × 120**
 4. The overlay has a transparent background — position it wherever you like on your scene
 5. Make sure **"Control audio via OBS"** is configured to your preference (the YouTube player audio comes through the browser source)
+
+## Donorbox Overlay Setup
+
+The bot also hosts a web overlay for Donorbox progress, checking a specified campaign page automatically.
+
+1. Add a **Browser Source** in OBS
+2. Set the URL to `http://localhost:28080/donorbox`
+3. Set the dimensions as needed for your stream layout
+4. Run the chatbot with the `--url` flag to monitor a specific campaign (e.g. `./stream-chatbot --url https://donorbox.org/your-campaign`). It checks the page every 60 seconds by default.
 
 ## Configuration
 
