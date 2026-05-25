@@ -1,7 +1,6 @@
 let ws;
 let currentTrackId = null;
 let ytPlayer = null;
-let bandcampTimer = null;
 let lastPausedState = false;
 
 // Initialize YouTube IFrame API
@@ -105,10 +104,10 @@ function handleStateUpdate(state) {
         playTrack(track);
     }
 
-    // Handle pause/resume state changes for YouTube
+    // Handle pause/resume state changes
     if (isPaused !== lastPausedState) {
         lastPausedState = isPaused;
-        if (track.source === 'youtube' && ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+        if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
             if (isPaused) {
                 ytPlayer.pauseVideo();
             } else {
@@ -129,33 +128,14 @@ function stopAllActivePlayers() {
     if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
         ytPlayer.stopVideo();
     }
-
-    const bcPlayer = document.getElementById('bandcamp-player');
-    bcPlayer.src = "";
-    
-    if (bandcampTimer) {
-        clearTimeout(bandcampTimer);
-        bandcampTimer = null;
-    }
 }
 
 function playTrack(track) {
     stopAllActivePlayers();
 
-    if (track.source === 'youtube') {
-        if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-            ytPlayer.loadVideoById(track.id);
-            ytPlayer.playVideo();
-        }
-    } else if (track.source === 'bandcamp') {
-        const bcPlayer = document.getElementById('bandcamp-player');
-        bcPlayer.src = track.bandcamp_url;
-        
-        // Setup timer to auto-skip
-        bandcampTimer = setTimeout(() => {
-            console.log("Bandcamp track ended (timer)");
-            sendTrackEnded();
-        }, track.duration * 1000);
+    if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+        ytPlayer.loadVideoById(track.id);
+        ytPlayer.playVideo();
     }
 }
 

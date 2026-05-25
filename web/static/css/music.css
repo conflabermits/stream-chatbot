@@ -7,13 +7,16 @@
     --border-radius: 16px;
 }
 
-body {
+html, body {
     margin: 0;
     padding: 0;
+    background: transparent;
+}
+
+body {
     font-family: 'Outfit', sans-serif;
     color: var(--text-main);
     overflow: hidden; /* Prevent scrollbars in OBS */
-    background: transparent;
 }
 
 .hidden {
@@ -22,16 +25,14 @@ body {
 }
 
 .overlay-container {
-    position: absolute;
-    bottom: 40px;
-    left: 40px;
-    width: 450px;
+    display: inline-block;
+    width: 490px;
+    box-sizing: border-box;
     background: var(--bg-dark);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: var(--border-radius);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
     padding: 20px;
     transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
     animation: slideUp 0.6s ease-out forwards;
@@ -104,24 +105,13 @@ body {
     font-weight: 700;
 }
 
+/* YouTube player is 0x0 — collapse wrapper so it takes no space */
 .players-container {
-    margin-top: 16px;
-}
-
-/* Hide iframes offscreen or 0 height if you just want audio, 
-   but for bandcamp we might want to see the small player, 
-   for youtube we can hide visually or show thumbnail */
-.player-wrapper {
-    border-radius: 8px;
+    position: absolute;
+    width: 0;
+    height: 0;
     overflow: hidden;
-    border: 2px dashed var(--primary-color);
-    background: rgba(6, 135, 245, 0.1);
-    margin-top: 8px;
-    min-height: 42px;
-}
-
-#yt-player {
-    pointer-events: none; /* Block interactions */
+    pointer-events: none;
 }
 
 @keyframes slideUp {

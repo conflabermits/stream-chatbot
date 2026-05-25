@@ -457,11 +457,6 @@ func Chatbot(TwitchToken string) {
 					return
 				}
 
-				// Sanitize Bandcamp direct URLs: strip leading "bc " prefix
-				if strings.HasPrefix(strings.ToLower(query), "bc http") {
-					query = strings.TrimSpace(query[2:])
-				}
-				
 				// Check if query is just a number for a past search
 				if subCommand == "add" {
 					if idx, err := strconv.Atoi(query); err == nil {
@@ -484,18 +479,10 @@ func Chatbot(TwitchToken string) {
 					}
 				}
 
-				preferredSource := ""
-				queryLower := strings.ToLower(query)
-				if strings.Contains(queryLower, "bc") || strings.Contains(queryLower, "bandcamp") {
-					preferredSource = "bandcamp"
-				} else if strings.Contains(queryLower, "yt") || strings.Contains(queryLower, "youtube") {
-					preferredSource = "youtube"
-				}
-
-				log.Printf("[!request %s] Searching for '%s' (pref: %s)\n", subCommand, query, preferredSource)
+				log.Printf("[!request %s] Searching for '%s'\n", subCommand, query)
 				
 				go func() {
-					tracks, err := player.SearchTrack(query, message.User.DisplayName, preferredSource)
+					tracks, err := player.SearchTrack(query, message.User.DisplayName)
 					if err != nil || len(tracks) == 0 {
 						msg := "Error or no results: "
 						if err != nil {

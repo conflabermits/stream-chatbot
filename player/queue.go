@@ -10,14 +10,12 @@ import (
 
 // Track represents a single music request in the queue.
 type Track struct {
-	ID          string `json:"id"`           // Video ID or Bandcamp track URL/ID
-	Title       string `json:"title"`        // Video/Track Title
+	ID          string `json:"id"`           // Video ID
+	Title       string `json:"title"`        // Video Title
 	Artist      string `json:"artist"`       // Channel or Artist
-	Source      string `json:"source"`       // "youtube" | "bandcamp"
 	Duration    int    `json:"duration"`     // Length in seconds
 	RequestedBy string `json:"requested_by"` // Twitch Username
 	Thumbnail   string `json:"thumbnail"`    // Thumbnail URL (optional)
-	BandcampURL string `json:"bandcamp_url"` // Bandcamp iframe SRC or track URL
 }
 
 var (
@@ -130,17 +128,13 @@ func PlayOrResume() error {
 	return nil
 }
 
-// Pause pauses the current track (if YouTube).
+// Pause pauses the current track.
 func Pause() error {
 	queueMutex.Lock()
 	defer queueMutex.Unlock()
 
 	if currentTrack == nil {
 		return errors.New("nothing is playing")
-	}
-	
-	if currentTrack.Source == "bandcamp" {
-		return errors.New("Bandcamp tracks cannot be paused dynamically. Only YouTube tracks can be paused")
 	}
 
 	if IsPaused {
