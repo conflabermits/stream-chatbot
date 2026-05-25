@@ -22,6 +22,7 @@ var ChatbotVars = []string{
 	"TwitchChannel",
 	"BroadcasterID",
 	"TwitchToken",
+	"YouTubeAPIKey",
 }
 
 type Options struct {
@@ -66,6 +67,8 @@ func assignVar(line string) {
 				common.ChatbotCreds["BroadcasterID"] = value
 			case "TwitchToken":
 				common.ChatbotCreds["TwitchToken"] = value
+			case "YouTubeAPIKey":
+				common.ChatbotCreds["YouTubeAPIKey"] = value
 			}
 		}
 	}
@@ -100,6 +103,8 @@ func getChatbotCredsFromEnv() {
 			common.ChatbotCreds["BroadcasterID"] = value
 		case "TwitchToken":
 			common.ChatbotCreds["TwitchToken"] = value
+		case "YouTubeAPIKey":
+			common.ChatbotCreds["YouTubeAPIKey"] = value
 		}
 	}
 }
@@ -166,6 +171,8 @@ func main() {
 	log.Println("Kicked off WebOverlay goroutine")
 	go overlay.DonorboxOverlay()
 	log.Println("Kicked off DonorboxOverlay goroutine")
+	go overlay.MusicOverlay()
+	log.Println("Kicked off MusicOverlay goroutine")
 
 	chatbot.Chatbot(twitchToken)
 }

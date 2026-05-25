@@ -16,6 +16,7 @@ var ChatbotCreds map[string]string = map[string]string{
 	"TwitchChannel":  "",
 	"BroadcasterID":  "",
 	"TwitchToken":    "",
+	"YouTubeAPIKey":  "",
 }
 
 func WriteNewValueToProperties(filename, key, value string) error {
