@@ -436,11 +436,22 @@ func Chatbot(TwitchToken string) {
 			}
 		}
 
+		// Handle aliases for !request commands
+		msgTextLower := strings.ToLower(message.Message)
+		requestAliases := []string{"!add", "!search", "!remove", "!play", "!pause", "!resume", "!skip", "!done", "!queue", "!info", "!limit", "!autoplay"}
+		for _, alias := range requestAliases {
+			if strings.HasPrefix(msgTextLower, alias+" ") || msgTextLower == alias {
+				// Replace the alias with !request <command> preserving original casing for arguments
+				message.Message = "!request " + strings.TrimPrefix(alias, "!") + message.Message[len(alias):]
+				break
+			}
+		}
+
 		if strings.HasPrefix(message.Message, "!request ") {
 			log.Println("Detected !request message")
 			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!request ")))
 			if len(args) == 0 {
-				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay>")
+				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay> (or use !<command> directly)")
 				return
 			}
 			
@@ -675,7 +686,7 @@ func Chatbot(TwitchToken string) {
 				}
 
 			default:
-				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay>"
+				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay> (or use !<command> directly)"
 				log.Printf("[!request] Response: %s\n", msg)
 				client.Say(message.Channel, msg)
 			}

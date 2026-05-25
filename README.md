@@ -23,20 +23,20 @@ A Go-powered Twitch chatbot with a music request system and OBS browser overlay.
 
 All music commands use the `!request` prefix:
 
-| Command | Who | Description |
-|---------|-----|-------------|
-| `!request add <query or URL>` | Everyone | Search YouTube and add the top result to the queue |
-| `!request search <query>` | Everyone | Search YouTube and show up to 3 results (use `!request add <number>` to queue one) |
-| `!request add <number>` | Everyone | Add a result from your last search by its number |
-| `!request remove [query\|number]` | Everyone* | Remove a track from the queue by title, index, or most recent. *Non-mods can only remove their own requests |
-| `!request queue` | Everyone | Show the next 3 tracks in the queue |
-| `!request info` | Everyone | Show details about the currently playing track |
-| `!request play` | Mods | Start playback or resume from pause |
-| `!request pause` | Mods | Pause the current track |
-| `!request resume` | Mods | Resume the current track |
-| `!request skip` / `done` | Mods | Skip the current track |
-| `!request limit` | Mods | Toggle rate limiting on/off |
-| `!request autoplay` | Mods | Toggle autoplaying the next song in the queue |
+| Command | Alias | Who | Description |
+|---------|-------|-----|-------------|
+| `!request add <query or URL>` | `!add` | Everyone | Search YouTube and add the top result to the queue |
+| `!request search <query>` | `!search` | Everyone | Search YouTube and show up to 3 results (use `!request add <number>` to queue one) |
+| `!request add <number>` | `!add` | Everyone | Add a result from your last search by its number |
+| `!request remove [query\|number]` | `!remove` | Everyone* | Remove a track from the queue by title, index, or most recent. *Non-mods can only remove their own requests |
+| `!request queue` | `!queue` | Everyone | Show the next 3 tracks in the queue |
+| `!request info` | `!info` | Everyone | Show details about the currently playing track |
+| `!request play` | `!play` | Mods | Start playback or resume from pause |
+| `!request pause` | `!pause` | Mods | Pause the current track |
+| `!request resume` | `!resume` | Mods | Resume the current track |
+| `!request skip` / `done` | `!skip` / `!done` | Mods | Skip the current track |
+| `!request limit` | `!limit` | Mods | Toggle rate limiting on/off |
+| `!request autoplay` | `!autoplay` | Mods | Toggle autoplaying the next song in the queue |
 
 ### General Chat Commands
 
