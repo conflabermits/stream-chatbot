@@ -32,7 +32,23 @@ var (
 	MaxDurationSeconds = 1200 // 20 minutes
 	CooldownDuration   = 10 * time.Minute
 	RateLimitEnabled   = true
+	AutoplayEnabled    = false
 )
+
+// ToggleAutoplay toggles the autoplay feature.
+func ToggleAutoplay() bool {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+	AutoplayEnabled = !AutoplayEnabled
+	return AutoplayEnabled
+}
+
+// GetAutoplay returns whether autoplay is enabled.
+func GetAutoplay() bool {
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
+	return AutoplayEnabled
+}
 
 // ToggleRateLimit toggles the rate limiting feature.
 func ToggleRateLimit() bool {

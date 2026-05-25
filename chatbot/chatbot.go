@@ -440,7 +440,7 @@ func Chatbot(TwitchToken string) {
 			log.Println("Detected !request message")
 			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!request ")))
 			if len(args) == 0 {
-				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>")
+				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay>")
 				return
 			}
 			
@@ -656,8 +656,26 @@ func Chatbot(TwitchToken string) {
 					client.Say(message.Channel, msg)
 				}
 
+			case "autoplay":
+				if isMod {
+					enabled := player.ToggleAutoplay()
+					if enabled {
+						msg := "Autoplay is now ENABLED. The next song will play automatically."
+						log.Printf("[!request autoplay] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					} else {
+						msg := "Autoplay is now DISABLED. You will need to use !request play between songs."
+						log.Printf("[!request autoplay] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					}
+				} else {
+					msg := "You do not have permission to toggle autoplay."
+					log.Printf("[!request autoplay] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
+				}
+
 			default:
-				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>"
+				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay>"
 				log.Printf("[!request] Response: %s\n", msg)
 				client.Say(message.Channel, msg)
 			}

@@ -36,6 +36,7 @@ All music commands use the `!request` prefix:
 | `!request resume` | Mods | Resume the current track |
 | `!request skip` / `done` | Mods | Skip the current track |
 | `!request limit` | Mods | Toggle rate limiting on/off |
+| `!request autoplay` | Mods | Toggle autoplaying the next song in the queue |
 
 ### General Chat Commands
 
