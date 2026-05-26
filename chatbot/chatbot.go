@@ -436,11 +436,22 @@ func Chatbot(TwitchToken string) {
 			}
 		}
 
+		// Handle aliases for !request commands
+		msgTextLower := strings.ToLower(message.Message)
+		requestAliases := []string{"!add", "!search", "!remove", "!play", "!pause", "!resume", "!skip", "!done", "!queue", "!info", "!limit", "!autoplay"}
+		for _, alias := range requestAliases {
+			if strings.HasPrefix(msgTextLower, alias+" ") || msgTextLower == alias {
+				// Replace the alias with !request <command> preserving original casing for arguments
+				message.Message = "!request " + strings.TrimPrefix(alias, "!") + message.Message[len(alias):]
+				break
+			}
+		}
+
 		if strings.HasPrefix(message.Message, "!request ") {
 			log.Println("Detected !request message")
 			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!request ")))
 			if len(args) == 0 {
-				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>")
+				client.Say(message.Channel, "Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay> (or use !<command> directly)")
 				return
 			}
 			
@@ -596,6 +607,9 @@ func Chatbot(TwitchToken string) {
 			case "skip", "done":
 				if isMod {
 					player.SkipCurrent()
+					if player.GetAutoplay() {
+						player.PlayOrResume()
+					}
 					overlay.BroadcastState()
 					msg := "Current track skipped!"
 					log.Printf("[!request %s] Success: %s\n", subCommand, msg)
@@ -656,8 +670,26 @@ func Chatbot(TwitchToken string) {
 					client.Say(message.Channel, msg)
 				}
 
+			case "autoplay":
+				if isMod {
+					enabled := player.ToggleAutoplay()
+					if enabled {
+						msg := "Autoplay is now ENABLED. The next song will play automatically."
+						log.Printf("[!request autoplay] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					} else {
+						msg := "Autoplay is now DISABLED. You will need to use !request play between songs."
+						log.Printf("[!request autoplay] Response: %s\n", msg)
+						client.Say(message.Channel, msg)
+					}
+				} else {
+					msg := "You do not have permission to toggle autoplay."
+					log.Printf("[!request autoplay] Response: %s\n", msg)
+					client.Say(message.Channel, msg)
+				}
+
 			default:
-				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit>"
+				msg := "Unknown subcommand. Usage: !request <add|search|remove|play|pause|resume|skip|done|queue|info|limit|autoplay> (or use !<command> directly)"
 				log.Printf("[!request] Response: %s\n", msg)
 				client.Say(message.Channel, msg)
 			}

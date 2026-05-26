@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Now Playing Fullscreen Overlay</title>
+    <link rel="stylesheet" href="/static/css/nowplaying.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="fullscreen-container" class="fullscreen-container">
+        <div class="content">
+            <img id="track-thumbnail" src="" alt="Thumbnail" class="thumbnail" />
+            <div class="info">
+                <h2 class="now-playing-label">NOW PLAYING</h2>
+                <h1 id="track-title" class="title">Song Title</h1>
+                <h3 id="track-artist" class="artist">Artist Name</h3>
+                <div class="requester-box">
+                    <span id="track-requester" class="requester">Requested by User</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/nowplaying.js"></script>
+</body>
+</html>
