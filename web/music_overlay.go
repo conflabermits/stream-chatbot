@@ -20,6 +20,17 @@ func MusicOverlay() {
 		w.Write(htmlContent)
 	})
 
+	// Serve the full-screen now playing overlay
+	mux.HandleFunc("/nowplaying", func(w http.ResponseWriter, r *http.Request) {
+		htmlContent, err := content.ReadFile("static/nowplaying.html")
+		if err != nil {
+			http.Error(w, "Error reading embedded HTML file", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		w.Write(htmlContent)
+	})
+
 	// Serve static JS/CSS
 	mux.Handle("/static/", http.FileServer(http.FS(content)))
 

@@ -34,7 +34,7 @@ All music commands use the `!request` prefix:
 | `!request play` | `!play` | Mods | Start playback or resume from pause |
 | `!request pause` | `!pause` | Mods | Pause the current track |
 | `!request resume` | `!resume` | Mods | Resume the current track |
-| `!request skip` / `done` | `!skip` / `!done` | Mods | Skip the current track |
+| `!request skip` / `done` | `!skip` / `!done` | Mods | Skip the current track (automatically plays the next track if autoplay is enabled) |
 | `!request limit` | `!limit` | Mods | Toggle rate limiting on/off |
 | `!request autoplay` | `!autoplay` | Mods | Toggle autoplaying the next song in the queue |
 
@@ -49,13 +49,25 @@ All music commands use the `!request` prefix:
 | `!poll` / `!getPoll` | Everyone | Shows the results of the currently active Twitch poll |
 | `!poll <question> // <choice 1> // <choice 2>` | Everyone | Creates a new Twitch poll with channel points voting (max 6 choices) |
 
-### Music OBS Overlay Setup
+### Music OBS Overlays Setup
 
-1. Add a **Browser Source** in OBS
-2. Set the URL to `http://localhost:38080/music`
-3. Set the dimensions to **490 × 120**
-4. The overlay has a transparent background — position it wherever you like on your scene
-5. Make sure **"Control audio via OBS"** is configured to your preference (the YouTube player audio comes through the browser source)
+The bot provides two distinct browser overlays for music:
+
+**1. Mini Player & Audio Source (Required)**
+This is the main player that handles the audio and displays a small "Now Playing" widget.
+- Add a **Browser Source** in OBS
+- Set the URL to `http://localhost:38080/music`
+- Set the dimensions to **490 × 120**
+- The overlay has a transparent background — position it wherever you like on your scene
+- Make sure **"Control audio via OBS"** is configured to your preference (the YouTube player audio comes through the browser source)
+
+**2. Full-Screen "Now Playing" Splash (Optional)**
+This overlay stays 100% transparent but displays a large, centered splash screen with the album art and track info for 3 seconds whenever a new song starts playing. Note: The audio in the Mini Player is intentionally delayed by 4 seconds to allow this splash screen animation to finish gracefully.
+- Add a **Browser Source** in OBS
+- Set the URL to `http://localhost:38080/nowplaying`
+- Set the dimensions to match your stream output (e.g., **1920 × 1080**)
+- Place it above your game capture, but behind critical alerts
+- **Opacity Tweak**: To adjust how transparent this overlay is, add `opacity: 0.9;` (or your preferred value) to the OBS browser source's Custom CSS field within the `body { ... }` block.
 
 ## Donorbox Overlay Setup
 

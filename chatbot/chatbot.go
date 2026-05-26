@@ -607,6 +607,9 @@ func Chatbot(TwitchToken string) {
 			case "skip", "done":
 				if isMod {
 					player.SkipCurrent()
+					if player.GetAutoplay() {
+						player.PlayOrResume()
+					}
 					overlay.BroadcastState()
 					msg := "Current track skipped!"
 					log.Printf("[!request %s] Success: %s\n", subCommand, msg)

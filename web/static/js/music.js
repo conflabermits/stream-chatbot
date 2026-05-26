@@ -2,6 +2,7 @@ let ws;
 let currentTrackId = null;
 let ytPlayer = null;
 let lastPausedState = false;
+let playTimeout = null;
 
 // Initialize YouTube IFrame API
 function onYouTubeIframeAPIReady() {
@@ -71,6 +72,9 @@ function handleStateUpdate(state) {
     if (!track) {
         // Nothing actively playing — show "Up Next" or idle message
         stopAllActivePlayers();
+        if (playTimeout) {
+            clearTimeout(playTimeout);
+        }
         currentTrackId = null;
         lastPausedState = false;
 
@@ -101,7 +105,14 @@ function handleStateUpdate(state) {
         document.getElementById('track-requester').innerText = "Requested by " + track.requested_by;
         container.classList.remove('hidden');
 
-        playTrack(track);
+        stopAllActivePlayers();
+        if (playTimeout) {
+            clearTimeout(playTimeout);
+        }
+        
+        playTimeout = setTimeout(() => {
+            playTrack(track);
+        }, 4000);
     }
 
     // Handle pause/resume state changes
