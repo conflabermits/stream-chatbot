@@ -85,8 +85,8 @@ function handleStateUpdate(state) {
             document.getElementById('track-requester').innerText = "Requested by " + upNext.requested_by;
             musicIcon.classList.add('paused');
         } else {
-            document.getElementById('track-title').innerText = "Waiting for requests...";
-            document.getElementById('track-artist').innerText = "The queue is empty.";
+            document.getElementById('track-title').innerText = "Nothing currently playing";
+            document.getElementById('track-artist').innerText = "Type '!SL' or '!REQUEST' to add a song!";
             document.getElementById('track-requester').innerText = "";
             musicIcon.classList.add('paused');
         }
