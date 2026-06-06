@@ -5,19 +5,18 @@ A Go-powered Twitch chatbot with a music request system and OBS browser overlay.
 ## Features
 
 - **Twitch Chat Commands** — Polls, quotes, alphabetizer, and more
-- **Music Request System** — Viewers request YouTube songs via chat; audio plays through an OBS browser source overlay
+- **Streamer Songlist Integration** — Automatically fetches the next song from your Streamer Songlist queue and plays it through an OBS browser source overlay
 - **Real-time Overlay** — WebSocket-driven "Now Playing" overlay with animated EQ visualizer, track info, and transparent background for OBS
-- **Rate Limiting** — Configurable cooldown to prevent spam (2 requests per 10 minutes per user)
 
 ## Music Request System
 
 ### How It Works
 
-1. The chatbot listens for `!request` commands in Twitch chat
-2. When a viewer requests a song, the bot searches the YouTube Data API and adds the top result to a queue
-3. A local web server (port `38080`) serves an HTML overlay page at `http://localhost:38080/music`
-4. The overlay connects via WebSocket and receives real-time state updates (current track, queue, pause state)
-5. The YouTube IFrame API plays audio in the browser source — OBS captures the audio output
+1. The bot interfaces with the Streamer Songlist API to fetch the top song from your channel's queue
+2. A local web server (port `38080`) serves an HTML overlay page at `http://localhost:38080/music`
+3. The overlay connects via WebSocket and receives real-time state updates (current track, pause state)
+4. The YouTube IFrame API plays audio in the browser source — OBS captures the audio output
+5. When a track finishes, the bot sends `!setPlayed` in Twitch chat to automatically advance your Streamer Songlist queue
 
 ### Music Request Commands
 
@@ -25,17 +24,11 @@ All music commands use the `!request` prefix:
 
 | Command | Alias | Who | Description |
 |---------|-------|-----|-------------|
-| `!request add <query or URL>` | `!add` | Everyone | Search YouTube and add the top result to the queue |
-| `!request search <query>` | `!search` | Everyone | Search YouTube and show up to 3 results (use `!request add <number>` to queue one) |
-| `!request add <number>` | `!add` | Everyone | Add a result from your last search by its number |
-| `!request remove [query\|number]` | `!remove` | Everyone* | Remove a track from the queue by title, index, or most recent. *Non-mods can only remove their own requests |
-| `!request queue` | `!queue` | Everyone | Show the next 3 tracks in the queue |
 | `!request info` | `!info` | Everyone | Show details about the currently playing track |
-| `!request play` | `!play` | Mods | Start playback or resume from pause |
+| `!request play` | `!play` | Mods | Start playback or resume from pause (fetches next track from Streamer Songlist) |
 | `!request pause` | `!pause` | Mods | Pause the current track |
 | `!request resume` | `!resume` | Mods | Resume the current track |
 | `!request skip` / `done` | `!skip` / `!done` | Mods | Skip the current track (automatically plays the next track if autoplay is enabled) |
-| `!request limit` | `!limit` | Mods | Toggle rate limiting on/off |
 | `!request autoplay` | `!autoplay` | Mods | Toggle autoplaying the next song in the queue |
 
 ### General Chat Commands
@@ -103,8 +96,9 @@ stream-chatbot/
 ├── chatbot/chatbot.go   # Twitch IRC bot with all chat command handlers
 ├── common/common.go     # Shared credentials loader
 ├── player/
-│   ├── queue.go         # Track queue, add/remove/skip/pause logic, rate limiting
-│   └── search.go        # YouTube Data API search and metadata fetching
+│   ├── queue.go         # Track state, skip/pause logic, autoplay setting
+│   ├── search.go        # YouTube Data API search and metadata fetching
+│   └── ssl.go           # Streamer Songlist API integration to fetch tracks
 ├── web/
 │   ├── music_overlay.go # HTTP server for the overlay page (port 38080)
 │   ├── websocket.go     # WebSocket handler for real-time state broadcast
