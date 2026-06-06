@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"stream-chatbot/player"
@@ -70,9 +71,13 @@ func handleMusicWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg.Event == "TRACK_ENDED" {
+			player.NotifyTrackEnded()
+
 			if player.GetAutoplay() {
 				// Autoplay is on, clear current and try to play next
 				player.ClearCurrent()
+				log.Println("Received TRACK_ENDED. Autoplay ON, waiting 2.5s for SSL queue to advance via chat...")
+				time.Sleep(2500 * time.Millisecond)
 				err := player.PlayOrResume()
 				if err != nil {
 					log.Println("Received TRACK_ENDED (Autoplay ON). Queue empty, waiting.")
