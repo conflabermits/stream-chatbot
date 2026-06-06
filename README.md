@@ -20,16 +20,16 @@ A Go-powered Twitch chatbot with a music request system and OBS browser overlay.
 
 ### Music Request Commands
 
-All music commands use the `!request` prefix:
+All music commands use the `!music` prefix:
 
 | Command | Alias | Who | Description |
 |---------|-------|-----|-------------|
-| `!request info` | `!info` | Everyone | Show details about the currently playing track |
-| `!request play` | `!play` | Mods | Start playback or resume from pause (fetches next track from Streamer Songlist) |
-| `!request pause` | `!pause` | Mods | Pause the current track |
-| `!request resume` | `!resume` | Mods | Resume the current track |
-| `!request skip` / `done` | `!skip` / `!done` | Mods | Skip the current track (automatically plays the next track if autoplay is enabled) |
-| `!request autoplay` | `!autoplay` | Mods | Toggle autoplaying the next song in the queue |
+| `!music info` | `!info` | Everyone | Show details about the currently playing track |
+| `!music play` | `!play` | Mods | Start playback or resume from pause (fetches next track from Streamer Songlist) |
+| `!music pause` | `!pause` | Mods | Pause the current track |
+| `!music resume` | `!resume` | Mods | Resume the current track |
+| `!music skip` / `done` | `!skip` / `!done` | Mods | Skip the current track (automatically plays the next track if autoplay is enabled) |
+| `!music autoplay` | `!autoplay` | Mods | Toggle autoplaying the next song in the queue |
 
 ### General Chat Commands
 

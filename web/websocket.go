@@ -85,7 +85,7 @@ func handleMusicWebSocket(w http.ResponseWriter, r *http.Request) {
 					log.Println("Received TRACK_ENDED (Autoplay ON). Playing next track.")
 				}
 			} else {
-				log.Println("Received TRACK_ENDED from overlay, waiting for !request play...")
+				log.Println("Received TRACK_ENDED from overlay, waiting for !music play...")
 				player.ClearCurrent()
 			}
 			BroadcastState()

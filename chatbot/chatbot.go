@@ -439,22 +439,22 @@ func Chatbot(TwitchToken string) {
 			}
 		}
 
-		// Handle aliases for !request commands
+		// Handle aliases for !music commands
 		msgTextLower := strings.ToLower(message.Message)
-		requestAliases := []string{"!play", "!pause", "!resume", "!skip", "!done", "!info", "!autoplay"}
-		for _, alias := range requestAliases {
+		musicAliases := []string{"!play", "!pause", "!resume", "!skip", "!done", "!info", "!autoplay"}
+		for _, alias := range musicAliases {
 			if strings.HasPrefix(msgTextLower, alias+" ") || msgTextLower == alias {
-				// Replace the alias with !request <command> preserving original casing for arguments
-				message.Message = "!request " + strings.TrimPrefix(alias, "!") + message.Message[len(alias):]
+				// Replace the alias with !music <command> preserving original casing for arguments
+				message.Message = "!music " + strings.TrimPrefix(alias, "!") + message.Message[len(alias):]
 				break
 			}
 		}
 
-		if strings.HasPrefix(message.Message, "!request ") {
-			log.Println("Detected !request message")
-			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!request ")))
+		if strings.HasPrefix(message.Message, "!music ") {
+			log.Println("Detected !music message")
+			args := strings.Fields(strings.TrimSpace(strings.TrimPrefix(message.Message, "!music ")))
 			if len(args) == 0 {
-				client.Say(message.Channel, "Usage: !request <play|pause|resume|skip|done|info|autoplay> (or use !<command> directly)")
+				client.Say(message.Channel, "Usage: !music <play|pause|resume|skip|done|info|autoplay> (or use !<command> directly)")
 				return
 			}
 			
@@ -467,17 +467,17 @@ func Chatbot(TwitchToken string) {
 					err := player.PlayOrResume()
 					if err != nil {
 						msg := "Play error: " + err.Error()
-						log.Printf("[!request play] Response: %s\n", msg)
+						log.Printf("[!music play] Response: %s\n", msg)
 						client.Say(message.Channel, msg)
 					} else {
 						overlay.BroadcastState()
 						msg := "Playing!"
-						log.Printf("[!request play] Success: %s\n", msg)
+						log.Printf("[!music play] Success: %s\n", msg)
 						client.Say(message.Channel, msg)
 					}
 				} else {
 					msg := "You do not have permission to control playback."
-					log.Printf("[!request play] Response: %s\n", msg)
+					log.Printf("[!music play] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				}
 
@@ -486,17 +486,17 @@ func Chatbot(TwitchToken string) {
 					err := player.Pause()
 					if err != nil {
 						msg := "Pause error: " + err.Error()
-						log.Printf("[!request pause] Response: %s\n", msg)
+						log.Printf("[!music pause] Response: %s\n", msg)
 						client.Say(message.Channel, msg)
 					} else {
 						overlay.BroadcastState()
 						msg := "Paused."
-						log.Printf("[!request pause] Success: %s\n", msg)
+						log.Printf("[!music pause] Success: %s\n", msg)
 						client.Say(message.Channel, msg)
 					}
 				} else {
 					msg := "You do not have permission to control playback."
-					log.Printf("[!request pause] Response: %s\n", msg)
+					log.Printf("[!music pause] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				}
 
@@ -505,17 +505,17 @@ func Chatbot(TwitchToken string) {
 					err := player.PlayOrResume()
 					if err != nil {
 						msg := "Resume error: " + err.Error()
-						log.Printf("[!request resume] Response: %s\n", msg)
+						log.Printf("[!music resume] Response: %s\n", msg)
 						client.Say(message.Channel, msg)
 					} else {
 						overlay.BroadcastState()
 						msg := "Resumed!"
-						log.Printf("[!request resume] Success: %s\n", msg)
+						log.Printf("[!music resume] Success: %s\n", msg)
 						client.Say(message.Channel, msg)
 					}
 				} else {
 					msg := "You do not have permission to control playback."
-					log.Printf("[!request resume] Response: %s\n", msg)
+					log.Printf("[!music resume] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				}
 
@@ -530,11 +530,11 @@ func Chatbot(TwitchToken string) {
 					}
 					overlay.BroadcastState()
 					msg := "Current track skipped!"
-					log.Printf("[!request %s] Success: %s\n", subCommand, msg)
+					log.Printf("[!music %s] Success: %s\n", subCommand, msg)
 					client.Say(message.Channel, msg)
 				} else {
 					msg := "You do not have permission to skip tracks."
-					log.Printf("[!request %s] Response: %s\n", subCommand, msg)
+					log.Printf("[!music %s] Response: %s\n", subCommand, msg)
 					client.Say(message.Channel, msg)
 				}
 				
@@ -543,12 +543,12 @@ func Chatbot(TwitchToken string) {
 				t := player.GetCurrentTrack()
 				if t == nil {
 					msg := "No track is currently playing."
-					log.Printf("[!request info] Response: %s\n", msg)
+					log.Printf("[!music info] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				} else {
 					duration := fmt.Sprintf("%02d:%02d", t.Duration/60, t.Duration%60)
 					msg := fmt.Sprintf("Currently playing: %s - %s [%s] (Requested by: %s)", t.Artist, t.Title, duration, t.RequestedBy)
-					log.Printf("[!request info] Response: %s\n", msg)
+					log.Printf("[!music info] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				}
 				
@@ -558,22 +558,22 @@ func Chatbot(TwitchToken string) {
 					enabled := player.ToggleAutoplay()
 					if enabled {
 						msg := "Autoplay is now ENABLED. The next song will play automatically."
-						log.Printf("[!request autoplay] Response: %s\n", msg)
+						log.Printf("[!music autoplay] Response: %s\n", msg)
 						client.Say(message.Channel, msg)
 					} else {
-						msg := "Autoplay is now DISABLED. You will need to use !request play between songs."
-						log.Printf("[!request autoplay] Response: %s\n", msg)
+						msg := "Autoplay is now DISABLED. You will need to use !music play between songs."
+						log.Printf("[!music autoplay] Response: %s\n", msg)
 						client.Say(message.Channel, msg)
 					}
 				} else {
 					msg := "You do not have permission to toggle autoplay."
-					log.Printf("[!request autoplay] Response: %s\n", msg)
+					log.Printf("[!music autoplay] Response: %s\n", msg)
 					client.Say(message.Channel, msg)
 				}
 
 			default:
-				msg := "Unknown subcommand. Usage: !request <play|pause|resume|skip|done|info|autoplay> (or use !<command> directly)"
-				log.Printf("[!request] Response: %s\n", msg)
+				msg := "Unknown subcommand. Usage: !music <play|pause|resume|skip|done|info|autoplay> (or use !<command> directly)"
+				log.Printf("[!music] Response: %s\n", msg)
 				client.Say(message.Channel, msg)
 			}
 		}
